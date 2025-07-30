@@ -1,0 +1,12 @@
+.claude/
+uv.lock
+newsy.db
+__pycache__/
+*.old
+*.pyc
+.images/
+faiss_index.bin
+faiss_index_ids.npy
+news_previews/
+*.png
+*.txt
