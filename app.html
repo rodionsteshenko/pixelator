@@ -1,0 +1,2508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIXELATOR</title>
+<style>
+:root {
+  --bg-deep: #08080e;
+  --bg-panel: #101018;
+  --bg-card: #16161f;
+  --bg-slot: #1c1c28;
+  --bg-hover: #24243a;
+  --border: #2a2a3e;
+  --border-focus: #5e5eff;
+  --accent: #ff6b3d;
+  --accent-dim: #cc5530;
+  --accent-glow: rgba(255,107,61,0.25);
+  --blue: #4d7aff;
+  --green: #3dff8f;
+  --green-dim: #2ab86a;
+  --yellow: #ffd93d;
+  --text: #e0e0f0;
+  --text-dim: #7a7a96;
+  --text-muted: #44445a;
+  --checker-a: #1a1a26;
+  --checker-b: #222232;
+  --step-done: var(--green);
+  --step-active: var(--accent);
+  --step-pending: var(--text-muted);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: 'SF Mono','Fira Code','Cascadia Code','JetBrains Mono',monospace;
+  font-size: 12px;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+  gap: 24px;
+}
+
+.header h1 {
+  font-size: 13px;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ── STEPS NAV ── */
+.steps {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.step-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+
+.step-tab .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid currentColor;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.step-tab.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(255,107,61,0.06);
+}
+
+.step-tab.done {
+  color: var(--green);
+}
+
+.step-tab.done .num {
+  border-color: var(--green);
+}
+
+.step-tab:hover:not(.active) {
+  color: var(--text-dim);
+}
+
+/* ── STAGE PANELS ── */
+.stage { display: none; padding: 24px; }
+.stage.active { display: block; }
+
+/* ── FORM ELEMENTS ── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px 16px;
+  align-items: center;
+  max-width: 600px;
+}
+
+.form-grid label {
+  color: var(--text-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: right;
+}
+
+input[type="text"], textarea, select {
+  background: var(--bg-slot);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+
+input[type="text"]:focus, textarea:focus, select:focus {
+  border-color: var(--border-focus);
+}
+
+textarea { resize: vertical; min-height: 60px; }
+
+select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a7a96'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+select option { background: var(--bg-panel); }
+
+/* ── BUTTONS ── */
+.btn {
+  background: var(--bg-slot);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+
+.btn:hover { border-color: var(--border-focus); background: var(--bg-hover); }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.btn-green {
+  background: var(--green-dim);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.btn-green:hover:not(:disabled) {
+  background: #35dd7a;
+  box-shadow: 0 0 12px rgba(61,255,143,0.2);
+}
+
+/* ── RANGE SLIDERS ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--bg-slot);
+  border: 1px solid var(--border);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  background: var(--accent);
+  border: none;
+  cursor: grab;
+}
+
+/* ── IMAGE GRIDS ── */
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.image-card {
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.image-card:hover { border-color: var(--blue); }
+.image-card.selected { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+
+.image-card img, .image-card canvas {
+  image-rendering: pixelated;
+  display: block;
+}
+
+.image-card .card-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── CHECKERBOARD BG ── */
+.checker-bg {
+  background-image:
+    linear-gradient(45deg, var(--checker-a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-a) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-color: var(--checker-b);
+}
+
+/* ── SPINNER ── */
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-overlay {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+/* ── STAGE 3: ALIGNER ── */
+.aligner-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  min-height: 500px;
+}
+
+.preview-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.preview-box {
+  position: relative;
+  image-rendering: pixelated;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.preview-box canvas {
+  image-rendering: pixelated;
+}
+
+.preview-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.preview-toolbar .frame-num {
+  color: var(--text-dim);
+  min-width: 80px;
+  text-align: center;
+}
+
+.preview-toolbar .frame-num b {
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.frame-panel {
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+.frame-row {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.frame-row.active {
+  background: rgba(255,107,61,0.06);
+  border-color: var(--accent-dim);
+}
+
+.frame-thumb-small {
+  width: 44px; height: 44px;
+  border: 1px solid var(--border);
+  image-rendering: pixelated;
+  position: relative;
+  overflow: hidden;
+}
+
+.frame-thumb-small img {
+  width: 100%; height: 100%;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.frame-thumb-small .fn {
+  position: absolute;
+  bottom: 1px; right: 3px;
+  font-size: 9px;
+  color: var(--text-muted);
+  text-shadow: 0 0 3px var(--bg-deep);
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.slider-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slider-line label {
+  font-size: 9px;
+  color: var(--text-muted);
+  width: 10px;
+  font-weight: 700;
+}
+
+.slider-line input[type="range"] { flex: 1; height: 3px; }
+
+.slider-line .sv {
+  font-size: 10px;
+  color: var(--blue);
+  font-weight: 600;
+  min-width: 26px;
+  text-align: right;
+}
+
+/* ── RAW STRIP DISPLAY ── */
+.strip-display {
+  margin: 20px 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.strip-display img {
+  image-rendering: pixelated;
+  max-width: 512px;
+  border: 1px solid var(--border);
+}
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mt { margin-top: 20px; }
+.mb { margin-bottom: 16px; }
+.gap-row { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
+
+/* ── EXAMPLE BROWSER ── */
+.example-browser {
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.example-browser .section-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.example-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 0 10px 0;
+}
+
+.example-thumb {
+  flex-shrink: 0;
+  width: 96px;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 4px;
+}
+
+.example-thumb:hover { border-color: var(--blue); }
+.example-thumb.selected { border-color: var(--yellow); box-shadow: 0 0 10px rgba(255,217,61,0.2); }
+
+.example-thumb img {
+  width: 100%;
+  height: 80px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  display: block;
+  background: var(--bg-slot);
+}
+
+.example-thumb .thumb-name {
+  font-size: 8px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ref-badge {
+  display: inline-block;
+  background: var(--yellow);
+  color: var(--bg-deep);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-left: 6px;
+}
+
+/* ── STATUS BAR ── */
+.status-bar {
+  padding: 8px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Stage 2 mode tabs */
+.s2-tab {
+  background: var(--surface-alt);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.s2-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.s2-tab:hover:not(.active) {
+  background: var(--surface);
+  color: var(--text);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Pixelator</h1>
+  <div class="steps">
+    <button class="step-tab active" data-step="1" onclick="goStep(1)">
+      <span class="num">1</span> Generate Base
+    </button>
+    <button class="step-tab" data-step="2" onclick="goStep(2)">
+      <span class="num">2</span> Confirm Pixels
+    </button>
+    <button class="step-tab" data-step="3" onclick="goStep(3)">
+      <span class="num">3</span> Animate
+    </button>
+    <button class="step-tab" data-step="4" onclick="goStep(4)">
+      <span class="num">4</span> Align &amp; Export
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- STAGE 1: GENERATE BASE                       -->
+<!-- ════════════════════════════════════════════ -->
+<div class="stage active" id="stage-1">
+  <div class="section-title">Generate Base Character Sprite</div>
+
+  <div class="form-grid">
+    <label>Preset</label>
+    <select id="s1-preset" onchange="applyPreset()">
+      <option value="">— Custom —</option>
+      <optgroup label="Heroes">
+        <option value="fire_swordsman|medieval swordsman in steel armor with red cape, holding a flaming fire sword, heroic pose">Fire Swordsman</option>
+        <option value="paladin|holy paladin in shining gold and white plate armor, wielding a glowing hammer, righteous stance">Paladin</option>
+        <option value="ranger|wood elf ranger in green leather armor with hood, holding a longbow, quiver on back">Ranger</option>
+        <option value="rogue|hooded rogue in dark leather armor with twin daggers, mysterious and agile">Rogue</option>
+        <option value="wizard|elderly wizard in flowing blue robes with long white beard, holding a glowing staff with crystal orb">Wizard</option>
+        <option value="barbarian|muscular barbarian with war paint, fur loincloth and shoulder pads, wielding a massive two-handed axe">Barbarian</option>
+        <option value="cleric|dwarven cleric in chain mail with holy symbol on shield, holding a mace, stout and sturdy">Cleric</option>
+        <option value="bard|charismatic bard in colorful puffed-sleeve outfit with feathered hat, playing a lute">Bard</option>
+        <option value="monk|martial arts monk in simple orange robes with wraps on hands and feet, fighting stance">Monk</option>
+        <option value="druid|nature druid with antler headdress and leafy green robes, wooden staff with vines">Druid</option>
+      </optgroup>
+      <optgroup label="Enemies">
+        <option value="skeleton_warrior|undead skeleton warrior in rusted armor, glowing red eyes, wielding a jagged sword">Skeleton Warrior</option>
+        <option value="goblin|small green goblin with pointy ears and sharp teeth, holding a crude wooden club, ragged clothes">Goblin</option>
+        <option value="orc_berserker|hulking green orc berserker with tusks, spiked shoulder armor, wielding a brutal cleaver">Orc Berserker</option>
+        <option value="dark_knight|menacing dark knight in black spiked plate armor with glowing purple visor, dark greatsword">Dark Knight</option>
+        <option value="necromancer|gaunt necromancer in tattered black robes, skull staff, green magical energy swirling around hands">Necromancer</option>
+        <option value="slime|translucent green slime blob monster with a cute angry face, gelatinous body">Slime</option>
+        <option value="vampire|pale vampire lord in elegant crimson and black coat with high collar, sharp fangs, bat wings">Vampire</option>
+        <option value="bandit|rugged bandit with scarred face, leather armor and eye patch, wielding a crossbow">Bandit</option>
+      </optgroup>
+      <optgroup label="Monsters">
+        <option value="dragon_red|fearsome red dragon with large wings spread, breathing fire, scales and horns, quadrupedal">Red Dragon</option>
+        <option value="minotaur|hulking brown minotaur with massive horns, bull head on humanoid body, wielding a battle axe">Minotaur</option>
+        <option value="wolf|dire wolf with grey fur, bared fangs, muscular and aggressive, glowing yellow eyes">Dire Wolf</option>
+        <option value="treant|ancient tree creature with bark skin, mossy beard, glowing green eyes, branch-like arms">Treant</option>
+        <option value="golem_stone|massive stone golem with glowing rune carvings, blocky angular body, mossy patches">Stone Golem</option>
+        <option value="basilisk|reptilian basilisk with six legs, green scales, deadly yellow eyes, forked tongue">Basilisk</option>
+        <option value="phoenix|majestic phoenix bird made of fire and golden feathers, wings spread, trailing flames">Phoenix</option>
+        <option value="beholder|floating beholder with one giant central eye, multiple eye stalks, toothy maw, purple skin">Beholder</option>
+      </optgroup>
+      <optgroup label="NPCs">
+        <option value="blacksmith|burly blacksmith with leather apron, holding a hammer near an anvil, muscular arms">Blacksmith</option>
+        <option value="merchant|traveling merchant with large backpack, wide-brimmed hat, coin pouch at belt, friendly smile">Merchant</option>
+        <option value="princess|medieval princess in elegant blue and gold gown, small tiara, flowing hair">Princess</option>
+        <option value="town_guard|town guard in standard chain mail with tabard, holding a spear and shield, helmet with nose guard">Town Guard</option>
+      </optgroup>
+    </select>
+
+    <label>Character Name</label>
+    <input type="text" id="s1-name" value="" placeholder="e.g. ice_dragon">
+
+    <label>Description</label>
+    <textarea id="s1-prompt" placeholder="Describe the character..."></textarea>
+
+    <label>Resolution</label>
+    <select id="s1-size">
+      <option value="8">8 × 8</option>
+      <option value="16" selected>16 × 16</option>
+      <option value="32">32 × 32</option>
+      <option value="48">48 × 48</option>
+      <option value="64">64 × 64</option>
+      <option value="96">96 × 96</option>
+      <option value="128">128 × 128</option>
+    </select>
+
+    <label>Variants</label>
+    <select id="s1-count">
+      <option value="1">1</option>
+      <option value="2" selected>2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+    </select>
+
+    <label>Or upload</label>
+    <input type="file" id="s1-upload" accept="image/*">
+  </div>
+
+  <div class="example-browser" id="s1-examples">
+    <div class="section-label">Reference Image <span style="color:var(--text-muted)">(optional — select to generate from example)</span></div>
+    <div class="example-strip" id="s1-example-strip">
+      <!-- populated on load -->
+    </div>
+    <div id="s1-ref-status" style="display:none;font-size:10px;color:var(--yellow);margin-top:4px">
+      Using reference: <b id="s1-ref-name"></b>
+      <button class="btn" style="padding:2px 8px;font-size:9px;margin-left:8px" onclick="clearReference()">Clear</button>
+    </div>
+  </div>
+
+  <div class="gap-row" style="align-items:center">
+    <button class="btn btn-primary" id="s1-generate" onclick="generateBase()">Generate Sprites</button>
+    <button class="btn" onclick="previewGeneratePrompt()" style="font-size:11px">Preview Prompt</button>
+    <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;margin-left:8px">
+      <input type="checkbox" id="s1-transparent"> Transparent background
+    </label>
+    <div id="s1-loading" class="loading-overlay" style="display:none">
+      <div class="spinner"></div> Generating with gpt-image-1.5...
+    </div>
+  </div>
+
+  <div class="image-grid" id="s1-results"></div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- STAGE 2: CONFIRM PIXEL GRID                   -->
+<!-- ════════════════════════════════════════════ -->
+<div class="stage" id="stage-2">
+  <div class="section-title">Confirm Pixel Grid Detection</div>
+
+  <!-- Candidate picker -->
+  <div style="margin-bottom:16px">
+    <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+      Select a base image to pixelate
+    </div>
+    <div id="s2-candidate-strip" style="display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px 0"></div>
+  </div>
+
+  <!-- Mode tabs -->
+  <div style="display:flex;gap:0;margin-bottom:16px">
+    <button class="btn s2-tab active" id="s2-tab-manual" onclick="s2SetMode('manual')"
+      style="border-radius:4px 0 0 4px;border-right:none">Manual Grid</button>
+    <button class="btn s2-tab" id="s2-tab-auto" onclick="s2SetMode('auto')"
+      style="border-radius:0 4px 4px 0">Auto-Detect from Pixel</button>
+  </div>
+
+  <!-- ── Manual mode controls ── -->
+  <div id="s2-manual-controls">
+    <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <span style="color:var(--text-muted);font-size:9px" id="s2-batch-status"></span>
+    </div>
+    <div style="color:var(--text-dim);font-size:10px;margin-bottom:8px" id="s2-selected-label">
+      Selected: <b id="s2-grid-label" style="color:var(--accent);font-size:16px">--</b> × <b id="s2-grid-label2" style="color:var(--accent);font-size:16px">--</b>
+      <span style="color:var(--text-muted);margin-left:12px">pixel block: <span id="s2-block-label">--</span>px</span>
+    </div>
+  </div>
+
+  <!-- ── Auto-detect controls ── -->
+  <div id="s2-auto-controls" style="display:none">
+    <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+      Click the center of a distinct pixel on the source image below. The grid will be detected automatically.
+      <span id="s2-seed-info" style="color:var(--text-muted);margin-left:8px"></span>
+    </div>
+    <div id="s2-auto-params" style="display:none">
+      <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">
+        Detected: <b id="s2-auto-grid-label" style="color:var(--accent);font-size:14px">--</b> × <b id="s2-auto-grid-label2" style="color:var(--accent);font-size:14px">--</b>
+        <span style="color:var(--text-muted);margin-left:8px">pixel≈<span id="s2-auto-pixel-size">--</span>px</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="s2-loading" class="loading-overlay" style="display:none">
+    <div class="spinner"></div> Detecting pixel grid... <span id="s2-loading-timer" style="color:var(--text-muted)"></span>
+  </div>
+
+  <!-- ══ AUTO MODE LAYOUT: big source on top, previews below ══ -->
+  <div id="s2-layout-auto" style="display:none;margin-top:16px">
+    <div>
+      <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Source Image — click a pixel</div>
+      <div style="position:relative;width:fit-content">
+        <div class="image-card checker-bg" style="cursor:default;width:fit-content">
+          <img id="s2-source-img-auto" src="" style="width:768px;height:768px;image-rendering:pixelated">
+        </div>
+        <canvas id="s2-draw-canvas" width="768" height="768"
+          style="position:absolute;top:0;left:0;width:768px;height:768px;pointer-events:none;cursor:default"></canvas>
+      </div>
+    </div>
+    <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:16px">
+      <div style="flex:1;min-width:300px">
+        <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Grid Overlay</div>
+        <div class="image-card checker-bg" style="cursor:default;width:fit-content">
+          <img id="s2-grid-preview-auto" src="" style="max-width:512px;image-rendering:pixelated">
+        </div>
+      </div>
+      <div style="min-width:300px">
+        <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+          Pixel Result
+          <span style="color:var(--text-muted);margin-left:8px;font-size:9px">original overlay: <span id="s2-opacity-label-auto">15</span>%</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:stretch">
+          <div class="image-card checker-bg" style="cursor:default;width:fit-content;position:relative">
+            <img id="s2-pixel-preview-auto" src="" style="max-width:512px;image-rendering:pixelated;display:block">
+            <img id="s2-original-overlay-auto" src="" style="position:absolute;top:0;left:0;width:100%;height:100%;image-rendering:pixelated;opacity:0.15;pointer-events:none">
+          </div>
+          <input type="range" id="s2-opacity-slider-auto" min="0" max="100" value="15" orient="vertical"
+            style="writing-mode:vertical-lr;direction:rtl;height:200px;width:24px;accent-color:var(--accent);cursor:pointer">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MANUAL MODE LAYOUT: batch previews ══ -->
+  <div id="s2-layout-manual" style="margin-top:16px">
+    <!-- Batch preview strip -->
+    <div id="s2-batch-strip" style="display:none">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+        <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px">
+          Grid Previews — click to select
+        </div>
+        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none">
+          <input type="checkbox" id="s2-best-only" checked onchange="s2ToggleBestOnly()"> Best only
+        </label>
+      </div>
+      <div id="s2-batch-grid" style="display:flex;gap:12px;overflow-x:auto;padding:8px 0 12px 0"></div>
+    </div>
+
+    <!-- Selected preview detail view -->
+    <div id="s2-detail-view" style="display:none;margin-top:16px">
+      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+        <div>
+          <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Source Image</div>
+          <div class="image-card checker-bg" style="cursor:default;width:fit-content">
+            <img id="s2-source-img-manual" src="" style="width:256px;height:256px;image-rendering:pixelated">
+          </div>
+        </div>
+        <div style="flex:1;min-width:300px">
+          <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Grid Overlay</div>
+          <div class="image-card checker-bg" style="cursor:default;width:fit-content">
+            <img id="s2-grid-preview-manual" src="" style="max-width:512px;image-rendering:pixelated">
+          </div>
+        </div>
+        <div style="min-width:300px">
+          <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+            Pixel Result
+            <span style="color:var(--text-muted);margin-left:8px;font-size:9px">original overlay: <span id="s2-opacity-label-manual">15</span>%</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="image-card checker-bg" style="cursor:default;width:fit-content;position:relative">
+              <img id="s2-pixel-preview-manual" src="" style="max-width:512px;image-rendering:pixelated;display:block">
+              <img id="s2-original-overlay-manual" src="" style="position:absolute;top:0;left:0;width:100%;height:100%;image-rendering:pixelated;opacity:0.15;pointer-events:none">
+            </div>
+            <input type="range" id="s2-opacity-slider-manual" min="0" max="100" value="15" orient="vertical"
+              style="writing-mode:vertical-lr;direction:rtl;height:200px;width:24px;accent-color:var(--accent);cursor:pointer">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gap-row" style="margin-top:16px">
+    <button class="btn btn-green" onclick="confirmGrid()">Confirm Grid → Stage 3</button>
+    <div id="s2-confirm-loading" class="loading-overlay" style="display:none">
+      <div class="spinner"></div> Downscaling...
+    </div>
+  </div>
+
+  <div id="s2-result-area" style="display:none;margin-top:16px">
+    <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+      Final Pixel Sprite <span id="s2-final-size" style="color:var(--text-muted)"></span>
+    </div>
+    <div class="image-card selected checker-bg" style="cursor:default;width:fit-content;border-color:var(--green)">
+      <img id="s2-final-preview" src="" style="width:256px;height:256px;image-rendering:pixelated">
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- STAGE 3: GENERATE ANIMATION                  -->
+<!-- ════════════════════════════════════════════ -->
+<div class="stage" id="stage-3">
+  <div class="section-title">Generate Animation from Base Sprite</div>
+
+  <div style="margin-bottom:16px">
+    <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Select Base Sprite</div>
+    <div class="example-strip" id="s3-base-strip">
+      <!-- populated dynamically -->
+    </div>
+  </div>
+
+  <div style="display:flex;gap:24px;align-items:flex-start">
+    <div style="flex:1;max-width:500px">
+      <div class="form-grid">
+        <label>Animation</label>
+        <select id="s3-anim-type" onchange="loadAnimationCandidates()">
+          <option value="idle">Idle</option>
+          <option value="walk">Walk</option>
+          <option value="run">Run</option>
+          <option value="attack" selected>Attack</option>
+          <option value="hurt">Hurt</option>
+          <option value="jump">Jump</option>
+          <option value="death">Death</option>
+        </select>
+
+        <label>Frames</label>
+        <select id="s3-num-frames">
+          <option value="2">2 frames</option>
+          <option value="4" selected>4 frames</option>
+          <option value="6">6 frames</option>
+        </select>
+
+        <label>Layout</label>
+        <select id="s3-layout">
+          <option value="linear" selected>Linear (left→right)</option>
+          <option value="grid">Grid</option>
+        </select>
+
+        <label>Variants</label>
+        <select id="s3-variants">
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+
+        <label>Game Style</label>
+        <input type="text" id="s3-game-style" value="platformer">
+
+        <label>Extra Detail</label>
+        <textarea id="s3-extra" placeholder="Extra animation details..."></textarea>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px;margin:8px 0">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none">
+          <input type="checkbox" id="s3-draw-slots" checked> Draw slot guides (grey boxes showing where each frame goes)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none">
+          <input type="checkbox" id="s3-prefill-slots"> Pre-fill all slots with seed sprite (AI modifies each)
+        </label>
+      </div>
+
+      <div class="gap-row">
+        <button class="btn btn-primary" id="s3-generate" onclick="generateAnimation()">Generate Animation</button>
+        <button class="btn" onclick="previewAnimatePrompt()" style="font-size:11px">Preview Prompt</button>
+        <div id="s3-loading" class="loading-overlay" style="display:none">
+          <div class="spinner"></div> Generating animation strip...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Animation candidates strip -->
+  <div id="s3-candidates-area" style="display:none;margin-top:16px">
+    <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+      Animation Candidates — click to select
+    </div>
+    <div id="s3-candidates-grid" style="display:flex;gap:12px;overflow-x:auto;padding:8px 0 12px 0"></div>
+  </div>
+
+  <div id="s3-strip-area" style="display:none">
+    <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:16px">
+      <div>
+        <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Canvas (Input to AI)</div>
+        <div class="image-card checker-bg" style="cursor:default;width:fit-content">
+          <img id="s3-canvas-img" src="" style="max-width:512px;image-rendering:pixelated">
+        </div>
+      </div>
+      <div>
+        <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Raw Animation Strip (AI Output)</div>
+        <div class="image-card checker-bg" style="cursor:default;width:fit-content">
+          <img id="s3-strip-img" src="" style="max-width:512px;image-rendering:pixelated">
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="normalizeStrip()">Normalize Frames → Stage 4</button>
+      <button class="btn" onclick="generateAnimation()">⟳ Re-generate Strip</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- STAGE 4: ALIGN & EXPORT                      -->
+<!-- ════════════════════════════════════════════ -->
+<div class="stage" id="stage-4">
+  <div class="section-title">Align Frames &amp; Export</div>
+
+  <!-- Animation strip picker -->
+  <div style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;flex-wrap:wrap">
+      <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px">
+        Select an animation strip to normalize
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:var(--text-muted);font-size:10px">Layout</span>
+        <select id="s4-layout" onchange="s4ApplyLayout(); if(S.stripPath) s4SweepGridSizes()" style="width:auto;min-width:80px;padding:2px 4px;font-size:11px">
+          <option value="linear" selected>Linear</option>
+          <option value="grid">Grid</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:var(--text-muted);font-size:10px">Frames</span>
+        <select id="s4-num-frames" onchange="s4ApplyLayout(); if(S.stripPath) s4SweepGridSizes()" style="width:auto;min-width:50px;padding:2px 4px;font-size:11px">
+          <option value="2">2</option>
+          <option value="4" selected>4</option>
+          <option value="6">6</option>
+        </select>
+      </div>
+    </div>
+    <div id="s4-strip-picker" style="display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px 0"></div>
+  </div>
+
+  <!-- Grid size scoring for animation frames -->
+  <div id="s4-grid-sweep" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px">
+        Frame Resolution — click to select
+      </div>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none">
+        <input type="checkbox" id="s4-best-only" checked onchange="s4RenderGridStrip()"> Best only
+      </label>
+      <span id="s4-sweep-status" style="color:var(--text-muted);font-size:10px"></span>
+    </div>
+    <div id="s4-grid-strip" style="display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px 0"></div>
+  </div>
+
+  <div class="aligner-layout">
+    <div class="preview-area">
+      <div class="preview-box checker-bg" id="s4-preview-box">
+        <canvas id="s4-canvas"></canvas>
+      </div>
+
+      <div class="preview-toolbar">
+        <button class="btn" onclick="stepFrame(-1)">←</button>
+        <button class="btn active" id="s4-play-btn" onclick="togglePlay()">Play</button>
+        <button class="btn" onclick="stepFrame(1)">→</button>
+        <span class="frame-num">Frame <b id="s4-frame-num">1</b> / <span id="s4-total">1</span></span>
+
+        <label style="display:flex;align-items:center;gap:4px;color:var(--text-dim);font-size:10px;margin-left:8px;cursor:pointer">
+          <input type="checkbox" id="s4-onion" style="accent-color:var(--accent)"> Onion
+        </label>
+
+        <div style="display:flex;align-items:center;gap:4px;margin-left:8px">
+          <span style="color:var(--text-muted);font-size:9px">FPS</span>
+          <input type="range" id="s4-fps" min="1" max="24" value="8" style="width:60px">
+          <span id="s4-fps-val" style="color:var(--accent);font-size:10px;min-width:16px">8</span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:4px;margin-left:8px">
+          <span style="color:var(--text-muted);font-size:9px">Scale</span>
+          <input type="range" id="s4-scale" min="1" max="32" value="8" style="width:60px">
+          <span id="s4-scale-val" style="color:var(--accent);font-size:10px;min-width:16px">8</span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:6px;margin-left:12px">
+          <span style="color:var(--text-muted);font-size:9px">Resolution</span>
+          <span id="s4-res-label" style="color:var(--accent);font-size:11px;font-weight:bold">--</span>
+        </div>
+      </div>
+
+      <div class="gap-row">
+        <button class="btn btn-green" onclick="exportGif()">Export GIF</button>
+        <button class="btn" onclick="exportSheet()">Export Spritesheet</button>
+        <button class="btn" onclick="resetAllOffsets()">Reset All</button>
+        <div id="s4-export-loading" class="loading-overlay" style="display:none">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame-panel" id="s4-frame-panel"></div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span id="status-text">Ready</span>
+  <span>PIXELATOR v1.0 — gpt-image-1.5</span>
+</div>
+
+<script>
+// ── STATE ──
+const S = {
+  characterName: '',
+  basePath: null,     // raw AI candidate path
+  baseUrl: null,
+  description: '',
+  frameSize: 16,
+  referencePath: null,
+  referenceName: null,
+  // Stage 2 — grid detection
+  gridCandidates: [],
+  selectedGridIdx: 0,
+  confirmedGridSize: null,
+  seedPath: null,     // downscaled pixel sprite path
+  seedUrl: null,
+  // Stage 3 — animation
+  stripPath: null,
+  stripCols: 0,
+  stripRows: 0,
+  slotSize: 0,
+  numFrames: 0,
+  // Stage 4 — align & export
+  frames: [],       // [{path, url, data_url, img}]
+  offsets: [],      // [{x, y}]
+  currentFrame: 0,
+  playing: true,
+  fps: 8,
+  scale: 8,
+  onion: false,
+  animTimer: null,
+};
+
+function status(msg) {
+  document.getElementById('status-text').textContent = msg;
+}
+
+// ── STEP NAVIGATION ──
+function goStep(n) {
+  document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.step-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(`stage-${n}`).classList.add('active');
+  document.querySelector(`.step-tab[data-step="${n}"]`).classList.add('active');
+
+  // Load data for each stage when entering
+  if (n === 1) loadExistingBases();
+  if (n === 2) s2LoadCandidates();
+  if (n === 3) s3LoadSeeds();
+  if (n === 4) s4LoadStripPicker();
+}
+
+function markDone(n) {
+  document.querySelector(`.step-tab[data-step="${n}"]`).classList.add('done');
+}
+
+// ══════════════════════════════════════
+// STAGE 1: EXAMPLE BROWSER
+// ══════════════════════════════════════
+async function loadExamples() {
+  try {
+    const res = await fetch('/api/list-examples');
+    const data = await res.json();
+    const strip = document.getElementById('s1-example-strip');
+    strip.innerHTML = '';
+
+    if (data.examples.length === 0) {
+      strip.innerHTML = '<span style="color:var(--text-muted);font-size:10px">No example images found</span>';
+      return;
+    }
+
+    data.examples.forEach(ex => {
+      const thumb = document.createElement('div');
+      thumb.className = 'example-thumb';
+      thumb.dataset.path = ex.path;
+      thumb.dataset.name = ex.name;
+
+      const img = document.createElement('img');
+      img.src = ex.url;
+      img.alt = ex.name;
+
+      const label = document.createElement('div');
+      label.className = 'thumb-name';
+      label.textContent = ex.name;
+
+      thumb.appendChild(img);
+      thumb.appendChild(label);
+
+      thumb.addEventListener('click', () => {
+        strip.querySelectorAll('.example-thumb').forEach(t => t.classList.remove('selected'));
+        thumb.classList.add('selected');
+        S.referencePath = ex.path;
+        S.referenceName = ex.name;
+        document.getElementById('s1-ref-status').style.display = 'block';
+        document.getElementById('s1-ref-name').textContent = ex.name;
+      });
+
+      strip.appendChild(thumb);
+    });
+  } catch (e) {
+    console.error('Failed to load examples:', e);
+  }
+}
+
+function clearReference() {
+  S.referencePath = null;
+  S.referenceName = null;
+  document.getElementById('s1-ref-status').style.display = 'none';
+  document.getElementById('s1-example-strip').querySelectorAll('.example-thumb').forEach(t => t.classList.remove('selected'));
+}
+
+// Load examples on page load
+loadExamples();
+
+// ══════════════════════════════════════
+// EXISTING BASES BROWSER
+// ══════════════════════════════════════
+async function loadExistingBases() {
+  try {
+    const res = await fetch('/api/list-bases');
+    const data = await res.json();
+
+    // Stage 1: show existing bases in results grid if any
+    if (data.bases.length > 0) {
+      const grid = document.getElementById('s1-results');
+      // Don't clear — append after freshly generated ones
+      const existing = grid.querySelectorAll('.image-card[data-existing]');
+      existing.forEach(el => el.remove());
+
+      // Add a label
+      let divider = grid.querySelector('.existing-divider');
+      if (!divider) {
+        divider = document.createElement('div');
+        divider.className = 'existing-divider';
+        divider.style.cssText = 'width:100%;font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)';
+        divider.textContent = 'Previously Generated';
+        grid.appendChild(divider);
+      }
+
+      data.bases.forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'image-card checker-bg';
+        card.dataset.path = b.path;
+        card.dataset.url = b.url;
+        card.dataset.existing = '1';
+        card.dataset.character = b.character;
+
+        const img = document.createElement('img');
+        img.src = b.url + '?t=' + Date.now();
+        img.style.width = '128px';
+        img.style.height = '128px';
+        img.style.imageRendering = 'pixelated';
+
+        const label = document.createElement('div');
+        label.className = 'card-label';
+        label.textContent = b.character + ' / ' + b.name;
+
+        card.appendChild(img);
+        card.appendChild(label);
+
+        card.addEventListener('click', () => {
+          grid.querySelectorAll('.image-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          document.getElementById('s1-next-row').style.display = 'flex';
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    // Stage 3: populate base picker strip — only seed (pixelated) sprites
+    const seeds = data.bases.filter(b => b.type === 'seed');
+    populateS3BasePicker(seeds);
+  } catch (e) {
+    console.error('Failed to load existing bases:', e);
+  }
+}
+
+function populateS3BasePicker(bases, selectedUrl) {
+  const strip = document.getElementById('s3-base-strip');
+  strip.innerHTML = '';
+
+  if (bases.length === 0 && !selectedUrl) {
+    strip.innerHTML = '<span style="color:var(--text-muted);font-size:10px">No base sprites yet — generate one in Stage 1</span>';
+    return;
+  }
+
+  bases.forEach(b => {
+    const thumb = document.createElement('div');
+    thumb.className = 'example-thumb';
+    if (b.url === S.baseUrl) thumb.classList.add('selected');
+    thumb.dataset.path = b.path;
+    thumb.dataset.url = b.url;
+    thumb.dataset.character = b.character;
+
+    const img = document.createElement('img');
+    img.src = b.url + '?t=' + Date.now();
+
+    const label = document.createElement('div');
+    label.className = 'thumb-name';
+    label.textContent = b.character + ' / ' + b.name;
+
+    thumb.appendChild(img);
+    thumb.appendChild(label);
+
+    thumb.addEventListener('click', () => {
+      strip.querySelectorAll('.example-thumb').forEach(t => t.classList.remove('selected'));
+      thumb.classList.add('selected');
+      S.basePath = b.path;
+      S.baseUrl = b.url;
+      S.characterName = b.character;
+      status(`Base sprite: ${b.character} / ${b.name}`);
+    });
+
+    strip.appendChild(thumb);
+  });
+}
+
+async function s2LoadCandidates() {
+  try {
+    const res = await fetch('/api/list-bases');
+    const data = await res.json();
+    const candidates = data.bases.filter(b => b.type === 'candidate');
+    const strip = document.getElementById('s2-candidate-strip');
+    strip.innerHTML = '';
+
+    if (candidates.length === 0) {
+      strip.innerHTML = '<span style="color:var(--text-muted);font-size:10px">No base images yet — generate one in Stage 1</span>';
+      return;
+    }
+
+    const t = '?t=' + Date.now();
+    candidates.forEach(b => {
+      const thumb = document.createElement('div');
+      thumb.className = 'example-thumb';
+      if (b.path === S.basePath) thumb.classList.add('selected');
+
+      const img = document.createElement('img');
+      img.src = b.url + t;
+      const label = document.createElement('div');
+      label.className = 'thumb-name';
+      label.textContent = b.character + ' / ' + b.name;
+
+      thumb.appendChild(img);
+      thumb.appendChild(label);
+
+      thumb.addEventListener('click', () => {
+        strip.querySelectorAll('.example-thumb').forEach(t => t.classList.remove('selected'));
+        thumb.classList.add('selected');
+        S.basePath = b.path;
+        S.baseUrl = b.url;
+        S.characterName = b.character;
+        s2SetSourceImg(b.url + t);
+
+        // Reset and re-sweep
+        _s2BatchResults = [];
+        _s2SelectedSize = null;
+        document.getElementById('s2-batch-grid').innerHTML = '';
+        s2GenerateBatchPreviews();
+      });
+
+      strip.appendChild(thumb);
+    });
+  } catch (e) {
+    console.error('Failed to load candidates for Stage 2:', e);
+  }
+}
+
+async function s3LoadSeeds() {
+  try {
+    const res = await fetch('/api/list-bases');
+    const data = await res.json();
+    const seeds = data.bases.filter(b => b.type === 'seed');
+    populateS3BasePicker(seeds);
+    loadAnimationCandidates();
+  } catch (e) {
+    console.error('Failed to load seeds for Stage 3:', e);
+  }
+}
+
+// Load existing bases on page load
+loadExistingBases();
+
+// ══════════════════════════════════════
+// STAGE 1: GENERATE BASE
+// ══════════════════════════════════════
+function applyPreset() {
+  const sel = document.getElementById('s1-preset');
+  if (!sel.value) return;
+  const [name, desc] = sel.value.split('|');
+  document.getElementById('s1-name').value = name;
+  document.getElementById('s1-prompt').value = desc;
+}
+
+async function generateBase() {
+  const name = document.getElementById('s1-name').value.trim() || 'character';
+  const prompt = document.getElementById('s1-prompt').value.trim();
+  const size = document.getElementById('s1-size').value;
+  const count = document.getElementById('s1-count').value;
+
+  if (!prompt) return alert('Enter a character description');
+
+  S.characterName = name;
+  S.description = prompt;
+  S.frameSize = parseInt(size);
+
+  document.getElementById('s1-loading').style.display = 'flex';
+  document.getElementById('s1-generate').disabled = true;
+
+  const useRef = !!S.referencePath;
+  status(`Generating ${count} base sprites${useRef ? ' from reference' : ''}...`);
+
+  try {
+    const transparent = document.getElementById('s1-transparent').checked;
+    const form = new FormData();
+    form.append('prompt', prompt);
+    form.append('frame_size', size);
+    form.append('count', count);
+    form.append('character_name', name);
+    form.append('transparent', transparent);
+
+    let endpoint = '/api/generate-base';
+    if (useRef) {
+      form.append('reference_path', S.referencePath);
+      endpoint = '/api/generate-from-reference';
+    }
+
+    const res = await fetch(endpoint, { method: 'POST', body: form });
+    const data = await res.json();
+
+    const grid = document.getElementById('s1-results');
+    grid.innerHTML = '';
+
+    data.results.forEach((r, i) => {
+      if (r.error) {
+        const err = document.createElement('div');
+        err.style.color = 'var(--accent)';
+        err.textContent = `Error: ${r.error}`;
+        grid.appendChild(err);
+        return;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'image-card checker-bg';
+      card.dataset.path = r.path;
+      card.dataset.url = r.url;
+
+      const img = document.createElement('img');
+      img.src = r.url + '?t=' + Date.now();
+      img.style.width = '192px';
+      img.style.height = '192px';
+      img.style.imageRendering = 'pixelated';
+
+      const label = document.createElement('div');
+      label.className = 'card-label';
+      label.textContent = `Variant ${i + 1}`;
+
+      card.appendChild(img);
+      card.appendChild(label);
+
+      grid.appendChild(card);
+    });
+
+    status(`Generated ${data.results.length} variants`);
+    // Refresh existing bases list (so Stage 2 picker is up to date)
+    loadExistingBases();
+  } catch (e) {
+    status(`Error: ${e.message}`);
+    alert('Generation failed: ' + e.message);
+  }
+
+  document.getElementById('s1-loading').style.display = 'none';
+  document.getElementById('s1-generate').disabled = false;
+}
+
+// Handle file upload as alternative
+document.getElementById('s1-upload').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const name = document.getElementById('s1-name').value.trim() || 'character';
+  S.characterName = name;
+
+  const form = new FormData();
+  form.append('character_name', name);
+  form.append('file', file);
+
+  const res = await fetch('/api/upload-base', { method: 'POST', body: form });
+  const data = await res.json();
+
+  const grid = document.getElementById('s1-results');
+  const card = document.createElement('div');
+  card.className = 'image-card checker-bg selected';
+  card.dataset.path = data.path;
+  card.dataset.url = data.url;
+
+  const img = document.createElement('img');
+  img.src = data.url + '?t=' + Date.now();
+  img.style.width = '192px';
+  img.style.height = '192px';
+  img.style.imageRendering = 'pixelated';
+
+  card.appendChild(img);
+  grid.prepend(card);
+  document.getElementById('s1-next-row').style.display = 'flex';
+});
+
+// ══════════════════════════════════════
+// STAGE 1→2: GO TO GRID DETECTION
+// ══════════════════════════════════════
+async function goToGridDetect() {
+  const selected = document.querySelector('#s1-results .image-card.selected');
+  if (!selected) return alert('Select a candidate first');
+
+  S.basePath = selected.dataset.path;
+  S.baseUrl = selected.dataset.url;
+  S.characterName = document.getElementById('s1-name').value.trim() || 'character';
+  S.description = document.getElementById('s1-prompt').value.trim();
+
+  // Show source image in Stage 2
+  s2SetSourceImg(S.baseUrl + '?t=' + Date.now());
+  markDone(1);
+  goStep(2);
+
+  // Reset batch state and auto-sweep 8–128
+  _s2BatchResults = [];
+  _s2SelectedSize = null;
+  _s2ManualBoundaries = null;
+  document.getElementById('s2-batch-grid').innerHTML = '';
+  document.getElementById('s2-batch-strip').style.display = 'none';
+  document.getElementById('s2-detail-view').style.display = 'none';
+
+  s2GenerateBatchPreviews();
+}
+
+let _s2BatchResults = []; // Array of {grid_size, preview_url, pixel_preview_url, col_boundaries, row_boundaries}
+let _s2SelectedSize = null;
+
+function updateGridLabel(gridSize) {
+  document.getElementById('s2-grid-label').textContent = gridSize;
+  document.getElementById('s2-grid-label2').textContent = gridSize;
+  document.getElementById('s2-block-label').textContent = (1024 / gridSize).toFixed(1);
+}
+
+async function s2GenerateBatchPreviews() {
+  const sizeMin = 8;
+  const sizeMax = 128;
+  if (!S.basePath) return alert('No base image loaded');
+
+  const statusEl = document.getElementById('s2-batch-status');
+  statusEl.textContent = `Scanning ${sizeMax - sizeMin + 1} grid sizes...`;
+  document.getElementById('s2-loading').style.display = 'flex';
+  status(`Scanning all grid sizes (${sizeMin}–${sizeMax})...`);
+
+  try {
+    const form = new FormData();
+    form.append('image_path', S.basePath);
+    form.append('character_name', S.characterName);
+    form.append('size_min', sizeMin);
+    form.append('size_max', sizeMax);
+
+    const res = await fetch('/api/batch-grid-preview', { method: 'POST', body: form });
+    const data = await res.json();
+
+    _s2BatchResults = data.results;
+    s2RenderBatchStrip();
+    statusEl.textContent = `${data.results.length} sizes scored — best candidates highlighted`;
+    status(`Scored ${data.results.length} grid sizes`);
+  } catch (e) {
+    statusEl.textContent = `Error: ${e.message}`;
+    status(`Batch preview error: ${e.message}`);
+  }
+
+  document.getElementById('s2-loading').style.display = 'none';
+}
+
+function s2ToggleBestOnly() {
+  s2RenderBatchStrip();
+}
+
+function s2RenderBatchStrip() {
+  const bestOnly = document.getElementById('s2-best-only').checked;
+  const strip = document.getElementById('s2-batch-grid');
+  strip.innerHTML = '';
+  const t = '?t=' + Date.now();
+
+  // Find the best candidate (lowest score)
+  const bestResult = _s2BatchResults.reduce((best, r) =>
+    (!best || r.score < best.score) ? r : best, null);
+
+  const displayResults = bestOnly ? _s2BatchResults.filter(r => r.is_local_min) : _s2BatchResults;
+
+  displayResults.forEach((r) => {
+    const card = document.createElement('div');
+    card.className = 'image-card checker-bg';
+    const isLocalMin = r.is_local_min || r.is_top;
+    const isGlobalBest = r.grid_size === bestResult.grid_size;
+    if (isLocalMin) card.style.borderColor = isGlobalBest ? 'var(--green)' : 'var(--green-dim)';
+    card.style.cssText += ';cursor:pointer;flex-shrink:0;text-align:center;padding:6px;min-width:140px';
+    if (isLocalMin) card.style.borderColor = isGlobalBest ? 'var(--green)' : 'var(--green-dim)';
+    card.dataset.gridSize = r.grid_size;
+
+    const img = document.createElement('img');
+    img.src = r.pixel_preview_url + t;
+    img.style.cssText = 'width:128px;height:128px;image-rendering:pixelated;display:block';
+
+    const label = document.createElement('div');
+    label.className = 'card-label';
+    const scoreStr = r.score !== undefined ? ` · ${r.score.toFixed(0)}` : '';
+    const rankBadge = isLocalMin ? (isGlobalBest ? ' ★' : ' ◆') : '';
+    label.innerHTML = `${r.grid_size}×${r.grid_size}${scoreStr}${rankBadge}`;
+    if (isLocalMin) label.style.color = isGlobalBest ? 'var(--green)' : 'var(--green-dim)';
+
+    card.appendChild(img);
+    card.appendChild(label);
+    card.addEventListener('click', () => s2SelectBatchPreview(r));
+    strip.appendChild(card);
+  });
+
+  document.getElementById('s2-batch-strip').style.display = 'block';
+
+  // Auto-select the best candidate
+  if (bestResult) {
+    s2SelectBatchPreview(bestResult);
+    // Scroll the best into view
+    const bestCard = strip.querySelector(`[data-grid-size="${bestResult.grid_size}"]`);
+    if (bestCard) bestCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+}
+
+function s2SelectBatchPreview(r) {
+  _s2SelectedSize = r.grid_size;
+  _s2ManualBoundaries = {
+    col_boundaries: r.col_boundaries,
+    row_boundaries: r.row_boundaries,
+  };
+  updateGridLabel(r.grid_size);
+
+  const t = '?t=' + Date.now();
+  s2SetGridPreview(r.preview_url + t);
+  s2SetPixelPreview(r.pixel_preview_url + t);
+  s2SetOriginalOverlay(S.baseUrl + t);
+
+  // Highlight selected card in strip
+  document.querySelectorAll('#s2-batch-grid .image-card').forEach(c => {
+    c.classList.toggle('selected', parseInt(c.dataset.gridSize) === r.grid_size);
+  });
+
+  document.getElementById('s2-detail-view').style.display = 'block';
+  document.getElementById('s2-selected-label').style.display = 'block';
+  status(`Selected: ${r.grid_size}×${r.grid_size}`);
+}
+
+document.getElementById('s2-opacity-slider-auto').addEventListener('input', (e) => s2SetOpacity(parseInt(e.target.value)));
+document.getElementById('s2-opacity-slider-manual').addEventListener('input', (e) => s2SetOpacity(parseInt(e.target.value)));
+
+// (Offset nudging removed — edge detection handles grid alignment automatically)
+
+// ══════════════════════════════════════
+// STAGE 2: MODE TABS & AUTO-DETECT
+// ══════════════════════════════════════
+let _s2Mode = 'manual';
+let _s2SeedBoundaries = null;  // {col_boundaries, row_boundaries} from detection
+let _s2ManualBoundaries = null; // {col_boundaries, row_boundaries} from edge-based manual detection
+let _s2Detecting = false;
+
+// Helpers to set images/text on both layout variants
+function s2SetSourceImg(src) {
+  document.getElementById('s2-source-img-auto').src = src;
+  document.getElementById('s2-source-img-manual').src = src;
+}
+function s2SetGridPreview(src) {
+  document.getElementById('s2-grid-preview-auto').src = src;
+  document.getElementById('s2-grid-preview-manual').src = src;
+}
+function s2SetPixelPreview(src) {
+  document.getElementById('s2-pixel-preview-auto').src = src;
+  document.getElementById('s2-pixel-preview-manual').src = src;
+}
+function s2SetOriginalOverlay(src) {
+  document.getElementById('s2-original-overlay-auto').src = src;
+  document.getElementById('s2-original-overlay-manual').src = src;
+}
+function s2SetOpacity(val) {
+  const o = val / 100;
+  document.getElementById('s2-original-overlay-auto').style.opacity = o;
+  document.getElementById('s2-original-overlay-manual').style.opacity = o;
+  document.getElementById('s2-opacity-label-auto').textContent = val;
+  document.getElementById('s2-opacity-label-manual').textContent = val;
+  document.getElementById('s2-opacity-slider-auto').value = val;
+  document.getElementById('s2-opacity-slider-manual').value = val;
+}
+
+function s2SetMode(mode) {
+  _s2Mode = mode;
+  document.getElementById('s2-tab-manual').classList.toggle('active', mode === 'manual');
+  document.getElementById('s2-tab-auto').classList.toggle('active', mode === 'auto');
+  document.getElementById('s2-manual-controls').style.display = mode === 'manual' ? 'block' : 'none';
+  document.getElementById('s2-auto-controls').style.display = mode === 'auto' ? 'block' : 'none';
+  document.getElementById('s2-layout-auto').style.display = mode === 'auto' ? 'block' : 'none';
+  document.getElementById('s2-layout-manual').style.display = mode === 'manual' ? 'block' : 'none';
+
+  const canvas = document.getElementById('s2-draw-canvas');
+  canvas.style.pointerEvents = mode === 'auto' ? 'auto' : 'none';
+  canvas.style.cursor = mode === 'auto' ? 'crosshair' : 'default';
+}
+
+// Canvas click event — single click to immediately detect grid
+(function() {
+  const canvas = document.getElementById('s2-draw-canvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.addEventListener('click', async (e) => {
+    if (_s2Mode !== 'auto' || _s2Detecting) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const canvasY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+    // Convert to image coordinates (1024x1024)
+    const imgX = Math.round(canvasX * 1024 / canvas.width);
+    const imgY = Math.round(canvasY * 1024 / canvas.height);
+
+    // Draw click marker
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ff4040';
+    ctx.beginPath();
+    ctx.arc(canvasX, canvasY, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(canvasX, canvasY, 6, 0, Math.PI * 2);
+    ctx.stroke();
+
+    _s2Detecting = true;
+    document.getElementById('s2-seed-info').textContent = `Detecting at (${imgX}, ${imgY})...`;
+    document.getElementById('s2-loading').style.display = 'flex';
+    const _timerStart = Date.now();
+    const _timerEl = document.getElementById('s2-loading-timer');
+    const _timerInterval = setInterval(() => {
+      _timerEl.textContent = ((Date.now() - _timerStart) / 1000).toFixed(1) + 's';
+    }, 100);
+    status('Auto-detecting grid from clicked pixel...');
+
+    try {
+      const form = new FormData();
+      form.append('image_path', S.basePath);
+      form.append('character_name', S.characterName);
+      form.append('click_x', imgX);
+      form.append('click_y', imgY);
+
+      const res = await fetch('/api/seed-grid-detect', { method: 'POST', body: form });
+      const data = await res.json();
+
+      _s2SeedBoundaries = {
+        col_boundaries: data.col_boundaries,
+        row_boundaries: data.row_boundaries,
+      };
+
+      // Draw the detected seed pixel on the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const scaleC = canvas.width / 1024;
+      ctx.strokeStyle = '#ff4040';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(data.seed_x * scaleC, data.seed_y * scaleC,
+                     data.pixel_w * scaleC, data.pixel_h * scaleC);
+      ctx.fillStyle = 'rgba(255, 64, 64, 0.2)';
+      ctx.fillRect(data.seed_x * scaleC, data.seed_y * scaleC,
+                    data.pixel_w * scaleC, data.pixel_h * scaleC);
+
+      // Update labels
+      document.getElementById('s2-seed-info').textContent =
+        `Pixel: ${data.pixel_w}×${data.pixel_h}px at (${data.seed_x}, ${data.seed_y})`;
+      document.getElementById('s2-auto-grid-label').textContent = data.grid_w;
+      document.getElementById('s2-auto-grid-label2').textContent = data.grid_h;
+      document.getElementById('s2-auto-pixel-size').textContent = `${data.pixel_w}×${data.pixel_h}`;
+      document.getElementById('s2-auto-params').style.display = 'block';
+
+      // Show previews
+      const t = '?t=' + Date.now();
+      s2SetGridPreview(data.preview_url + t);
+      s2SetPixelPreview(data.pixel_preview_url + t);
+      s2SetOriginalOverlay(S.baseUrl + t);
+
+      status(`Auto-detected: ${data.grid_w}×${data.grid_h} grid (pixel≈${data.pixel_w}×${data.pixel_h})`);
+    } catch (e) {
+      document.getElementById('s2-seed-info').textContent = `Error: ${e.message}`;
+      status(`Detection error: ${e.message}`);
+    }
+
+    clearInterval(_timerInterval);
+    _s2Detecting = false;
+    document.getElementById('s2-loading').style.display = 'none';
+  });
+})();
+
+// (updateSliderRange removed — batch generation replaces slider)
+
+async function confirmGrid() {
+  const isAuto = _s2Mode === 'auto' && _s2SeedBoundaries;
+  const isManualEdge = _s2Mode === 'manual' && _s2ManualBoundaries;
+  const gridSize = isAuto ? null : (_s2SelectedSize || null);
+
+  if (!isAuto && !isManualEdge) return alert('Generate previews and select a grid size first');
+  if (isAuto && !_s2SeedBoundaries) return alert('Run auto-detection first');
+
+  document.getElementById('s2-confirm-loading').style.display = 'flex';
+  const boundaries = isAuto ? _s2SeedBoundaries : _s2ManualBoundaries;
+  const label = boundaries ? `edge-detected grid` : `${gridSize}×${gridSize}`;
+  status(`Downscaling to ${label}...`);
+
+  try {
+    const form = new FormData();
+    form.append('character_name', S.characterName);
+    form.append('image_path', S.basePath);
+    if (boundaries) {
+      form.append('col_boundaries', JSON.stringify(boundaries.col_boundaries));
+      form.append('row_boundaries', JSON.stringify(boundaries.row_boundaries));
+    } else {
+      form.append('grid_size', gridSize);
+    }
+
+    const res = await fetch('/api/confirm-grid', { method: 'POST', body: form });
+    const data = await res.json();
+
+    S.seedPath = data.seed_path;
+    S.seedUrl = data.seed_url;
+    S.confirmedGridSize = data.grid_size;
+    S.frameSize = data.grid_size;
+
+    // Show final result
+    document.getElementById('s2-final-preview').src = data.preview_url + '?t=' + Date.now();
+    document.getElementById('s2-final-size').textContent = `(${data.grid_size}×${data.grid_size})`;
+    document.getElementById('s2-result-area').style.display = 'block';
+
+    // Auto-advance to Stage 3 after a beat
+    loadExistingBases().then(() => {
+      const strip = document.getElementById('s3-base-strip');
+      strip.querySelectorAll('.example-thumb').forEach(t => {
+        t.classList.toggle('selected', t.dataset.path === S.seedPath);
+      });
+    });
+    markDone(2);
+    setTimeout(() => {
+      goStep(3);
+      loadAnimationCandidates();
+      status(`Pixel sprite confirmed at ${S.confirmedGridSize}×${S.confirmedGridSize} — ready to animate`);
+    }, 800);
+  } catch (e) {
+    status(`Error: ${e.message}`);
+    alert('Grid confirmation failed: ' + e.message);
+  }
+
+  document.getElementById('s2-confirm-loading').style.display = 'none';
+}
+
+// ══════════════════════════════════════
+// STAGE 3: GENERATE ANIMATION
+// ══════════════════════════════════════
+async function generateAnimation() {
+  // Use the seed (downscaled pixel sprite) for animation, not the raw candidate
+  const basePath = S.seedPath || S.basePath;
+  if (!basePath) return alert('Confirm a base sprite first');
+
+  const animType = document.getElementById('s3-anim-type').value;
+  const numFrames = document.getElementById('s3-num-frames').value;
+  const layout = document.getElementById('s3-layout').value;
+  const variants = parseInt(document.getElementById('s3-variants').value);
+  const gameStyle = document.getElementById('s3-game-style').value;
+  const extra = document.getElementById('s3-extra').value.trim();
+
+  let desc = S.description || document.getElementById('s1-prompt').value.trim() || 'a game character';
+  if (extra) desc += '. ' + extra;
+
+  document.getElementById('s3-loading').style.display = 'flex';
+  document.getElementById('s3-generate').disabled = true;
+  const variantLabel = variants > 1 ? ` (${variants} variants)` : '';
+  status(`Generating ${numFrames}-frame ${animType} animation${variantLabel}...`);
+
+  try {
+    const promises = [];
+    for (let v = 0; v < variants; v++) {
+      const form = new FormData();
+      form.append('character_name', S.characterName);
+      form.append('seed_path', basePath);
+      form.append('animation_type', animType);
+      form.append('character_description', desc);
+      form.append('game_style', gameStyle);
+      form.append('num_frames', numFrames);
+      form.append('layout', layout);
+      form.append('draw_slots', document.getElementById('s3-draw-slots').checked);
+      form.append('prefill_slots', document.getElementById('s3-prefill-slots').checked);
+      promises.push(fetch('/api/generate-animation', { method: 'POST', body: form }).then(r => r.json()));
+    }
+
+    const results = await Promise.all(promises);
+    // Use the last result for display
+    const data = results[results.length - 1];
+
+    S.stripPath = data.strip_path;
+    S.stripCols = data.cols;
+    S.stripRows = data.rows;
+    S.slotSize = data.slot_size;
+    S.yOffset = data.y_offset || 0;
+    S.numFrames = data.num_frames;
+
+    const t = '?t=' + Date.now();
+    document.getElementById('s3-canvas-img').src = data.canvas_url + t;
+    document.getElementById('s3-strip-img').src = data.strip_url + t;
+    document.getElementById('s3-strip-area').style.display = 'block';
+
+    status(`${results.length} animation strip${results.length > 1 ? 's' : ''} generated: ${data.cols}×${data.rows} layout`);
+    loadAnimationCandidates();
+  } catch (e) {
+    status(`Error: ${e.message}`);
+    alert('Animation generation failed: ' + e.message);
+  }
+
+  document.getElementById('s3-loading').style.display = 'none';
+  document.getElementById('s3-generate').disabled = false;
+}
+
+async function loadAnimationCandidates() {
+  const animType = document.getElementById('s3-anim-type').value;
+  try {
+    const res = await fetch(`/api/list-animation-candidates?character_name=${encodeURIComponent(S.characterName)}&animation_type=${encodeURIComponent(animType)}`);
+    const data = await res.json();
+    const grid = document.getElementById('s3-candidates-grid');
+    grid.innerHTML = '';
+
+    if (data.candidates.length === 0) {
+      document.getElementById('s3-candidates-area').style.display = 'none';
+      return;
+    }
+
+    const t = '?t=' + Date.now();
+    data.candidates.forEach((c, i) => {
+      const card = document.createElement('div');
+      card.className = 'image-card checker-bg';
+      if (c.strip_path === S.stripPath) card.classList.add('selected');
+      card.style.cssText = 'cursor:pointer;flex-shrink:0;text-align:center;padding:6px;min-width:140px';
+      card.dataset.stripPath = c.strip_path;
+
+      const img = document.createElement('img');
+      img.src = c.strip_url + t;
+      img.style.cssText = 'width:128px;height:128px;image-rendering:pixelated;display:block;object-fit:contain';
+
+      const label = document.createElement('div');
+      label.className = 'card-label';
+      label.textContent = `#${i + 1}`;
+
+      card.appendChild(img);
+      card.appendChild(label);
+      card.addEventListener('click', () => {
+        S.stripPath = c.strip_path;
+        document.getElementById('s3-strip-img').src = c.strip_url + t;
+        if (c.canvas_url) document.getElementById('s3-canvas-img').src = c.canvas_url + t;
+        document.getElementById('s3-strip-area').style.display = 'block';
+        grid.querySelectorAll('.image-card').forEach(el => el.classList.remove('selected'));
+        card.classList.add('selected');
+        status(`Selected animation candidate #${i + 1}`);
+      });
+      grid.appendChild(card);
+    });
+
+    document.getElementById('s3-candidates-area').style.display = 'block';
+  } catch (e) {
+    console.error('Failed to load animation candidates:', e);
+  }
+}
+
+function s4ApplyLayout() {
+  const layout = document.getElementById('s4-layout').value;
+  const numFrames = parseInt(document.getElementById('s4-num-frames').value);
+  S.numFrames = numFrames;
+
+  if (layout === 'linear') {
+    S.stripCols = numFrames;
+    S.stripRows = 1;
+    S.slotSize = Math.floor(1024 / numFrames);
+    S.yOffset = Math.floor((1024 - S.slotSize) / 2);
+  } else {
+    const cols = Math.ceil(Math.sqrt(numFrames));
+    const rows = Math.ceil(numFrames / cols);
+    S.stripCols = cols;
+    S.stripRows = rows;
+    S.slotSize = Math.floor(1024 / Math.max(cols, rows));
+    S.yOffset = 0;
+  }
+}
+
+async function s4LoadStripPicker() {
+  const picker = document.getElementById('s4-strip-picker');
+  picker.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/list-all-strips');
+    const data = await res.json();
+
+    if (data.strips.length === 0) {
+      picker.innerHTML = '<span style="color:var(--text-muted);font-size:10px">No animation strips yet — generate one in Stage 3</span>';
+      return;
+    }
+
+    const t = '?t=' + Date.now();
+    data.strips.forEach(s => {
+      const thumb = document.createElement('div');
+      thumb.className = 'example-thumb';
+      if (s.strip_path === S.stripPath) thumb.classList.add('selected');
+
+      const img = document.createElement('img');
+      img.src = s.strip_url + t;
+      img.style.cssText = 'object-fit:contain';
+
+      const label = document.createElement('div');
+      label.className = 'thumb-name';
+      label.textContent = `${s.character} / ${s.animation_type}`;
+
+      thumb.appendChild(img);
+      thumb.appendChild(label);
+
+      thumb.addEventListener('click', () => {
+        picker.querySelectorAll('.example-thumb').forEach(t => t.classList.remove('selected'));
+        thumb.classList.add('selected');
+        S.stripPath = s.strip_path;
+        S.characterName = s.character;
+
+        s4ApplyLayout();
+        status(`Selected strip: ${s.character} / ${s.animation_type}`);
+
+        // Auto-sweep grid sizes
+        s4SweepGridSizes();
+      });
+
+      picker.appendChild(thumb);
+    });
+  } catch (e) {
+    picker.innerHTML = '<span style="color:var(--text-muted);font-size:10px">Failed to load strips</span>';
+    console.error(e);
+  }
+}
+
+let _s4GridResults = [];
+let _s4SelectedSize = null;
+
+async function normalizeStrip() {
+  if (!S.stripPath) return;
+
+  // Sync Stage 4 layout/frames from Stage 3 settings
+  const s3Layout = document.getElementById('s3-layout').value;
+  const s3Frames = document.getElementById('s3-num-frames').value;
+  document.getElementById('s4-layout').value = s3Layout;
+  document.getElementById('s4-num-frames').value = s3Frames;
+  s4ApplyLayout();
+
+  markDone(3);
+  goStep(4);
+
+  // Refresh picker and highlight current strip
+  s4LoadStripPicker();
+
+  // Auto-sweep grid sizes on the strip
+  await s4SweepGridSizes();
+}
+
+async function s4SweepGridSizes() {
+  const statusEl = document.getElementById('s4-sweep-status');
+  statusEl.textContent = 'Scoring grid sizes...';
+
+  try {
+    const form = new FormData();
+    form.append('strip_path', S.stripPath);
+    form.append('num_frames', S.numFrames);
+    form.append('cols', S.stripCols);
+    form.append('rows', S.stripRows);
+    form.append('slot_size', S.slotSize);
+    form.append('y_offset', S.yOffset || 0);
+    form.append('size_min', 4);
+    form.append('size_max', 128);
+
+    const res = await fetch('/api/score-strip-grids', { method: 'POST', body: form });
+    const data = await res.json();
+    _s4GridResults = data.results;
+
+    s4RenderGridStrip();
+
+    // Auto-select the best (lowest score)
+    const best = _s4GridResults.reduce((a, b) => a.score < b.score ? a : b, _s4GridResults[0]);
+    if (best) {
+      await s4SelectGridSize(best);
+      const card = document.querySelector(`#s4-grid-strip [data-grid-size="${best.grid_size}"]`);
+      if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+
+    statusEl.textContent = `${_s4GridResults.length} sizes scored — best: ${best.grid_size}×${best.grid_size}`;
+  } catch (e) {
+    statusEl.textContent = `Error: ${e.message}`;
+  }
+}
+
+function s4RenderGridStrip() {
+  const strip = document.getElementById('s4-grid-strip');
+  strip.innerHTML = '';
+  const bestOnly = document.getElementById('s4-best-only').checked;
+  const bestResult = _s4GridResults.reduce((a, b) => a.score < b.score ? a : b, _s4GridResults[0]);
+  const displayResults = bestOnly ? _s4GridResults.filter(r => r.is_local_min) : _s4GridResults;
+
+  displayResults.forEach(r => {
+    const card = document.createElement('div');
+    const isGlobalBest = r.grid_size === bestResult.grid_size;
+    card.style.cssText = `display:inline-flex;flex-direction:column;align-items:center;padding:6px 10px;
+      border:2px solid ${r.is_local_min ? (isGlobalBest ? 'var(--green)' : 'var(--green-dim)') : 'var(--border)'};
+      border-radius:6px;cursor:pointer;flex-shrink:0;min-width:60px;
+      background:${_s4SelectedSize === r.grid_size ? 'var(--card-bg)' : 'transparent'}`;
+    card.dataset.gridSize = r.grid_size;
+
+    const sizeLabel = document.createElement('div');
+    sizeLabel.style.cssText = `font-size:13px;font-weight:bold;color:${r.is_local_min ? (isGlobalBest ? 'var(--green)' : 'var(--green-dim)') : 'var(--text)'}`;
+    const badge = r.is_local_min ? (isGlobalBest ? ' ★' : ' ◆') : '';
+    sizeLabel.textContent = `${r.grid_size}×${r.grid_size}${badge}`;
+
+    const scoreLabel = document.createElement('div');
+    scoreLabel.style.cssText = 'font-size:9px;color:var(--text-muted)';
+    scoreLabel.textContent = r.score.toFixed(0);
+
+    card.appendChild(sizeLabel);
+    card.appendChild(scoreLabel);
+    card.addEventListener('click', () => s4SelectGridSize(r));
+    strip.appendChild(card);
+  });
+}
+
+async function s4SelectGridSize(r) {
+  _s4SelectedSize = r.grid_size;
+  document.getElementById('s4-res-label').textContent = `${r.grid_size}×${r.grid_size}`;
+
+  // Highlight selected
+  document.querySelectorAll('#s4-grid-strip > div').forEach(c => {
+    c.style.background = parseInt(c.dataset.gridSize) === r.grid_size ? 'var(--card-bg)' : 'transparent';
+  });
+
+  await _doNormalize(r.grid_size);
+}
+
+async function _doNormalize(targetSize) {
+  status('Normalizing frames...');
+
+  const form = new FormData();
+  form.append('strip_path', S.stripPath);
+  form.append('num_frames', S.numFrames);
+  form.append('target_size', targetSize);
+  form.append('cols', S.stripCols);
+  form.append('rows', S.stripRows);
+  form.append('slot_size', S.slotSize);
+  form.append('y_offset', S.yOffset || 0);
+
+  const res = await fetch('/api/normalize', { method: 'POST', body: form });
+  const data = await res.json();
+
+  // Load frame images
+  S.frames = [];
+  S.offsets = [];
+
+  const loadPromises = data.frames.map((f, i) => {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        S.frames.push({ ...f, img, index: i });
+        S.offsets.push({ x: 0, y: 0 });
+        resolve();
+      };
+      img.src = f.data_url;
+    });
+  });
+
+  await Promise.all(loadPromises);
+  S.frames.sort((a, b) => a.index - b.index);
+
+  S.currentFrame = 0;
+  S.frameSize = targetSize;
+  buildAligner();
+  status(`${S.frames.length} frames normalized at ${targetSize}×${targetSize}`);
+}
+
+// ══════════════════════════════════════
+// STAGE 4: ALIGN & EXPORT
+// ══════════════════════════════════════
+function buildAligner() {
+  const panel = document.getElementById('s4-frame-panel');
+  panel.innerHTML = '';
+  document.getElementById('s4-total').textContent = S.frames.length;
+
+  S.frames.forEach((f, i) => {
+    const row = document.createElement('div');
+    row.className = 'frame-row' + (i === 0 ? ' active' : '');
+    row.dataset.index = i;
+
+    // Thumbnail
+    const thumb = document.createElement('div');
+    thumb.className = 'frame-thumb-small checker-bg';
+    const timg = document.createElement('img');
+    timg.src = f.data_url;
+    thumb.appendChild(timg);
+    const fn = document.createElement('div');
+    fn.className = 'fn';
+    fn.textContent = i + 1;
+    thumb.appendChild(fn);
+
+    // Sliders
+    const sg = document.createElement('div');
+    sg.className = 'slider-group';
+    sg.appendChild(makeSlider('X', i, 'x'));
+    sg.appendChild(makeSlider('Y', i, 'y'));
+
+    row.appendChild(thumb);
+    row.appendChild(sg);
+
+    row.addEventListener('click', () => {
+      S.currentFrame = i;
+      highlightRow();
+      drawPreview();
+    });
+
+    panel.appendChild(row);
+  });
+
+  // Setup preview
+  setupPreviewControls();
+  updatePreviewSize();
+  startPlay();
+}
+
+function makeSlider(label, idx, axis) {
+  const line = document.createElement('div');
+  line.className = 'slider-line';
+
+  const lbl = document.createElement('label');
+  lbl.textContent = label;
+
+  const slider = document.createElement('input');
+  slider.type = 'range';
+  slider.min = -48;
+  slider.max = 48;
+  slider.value = 0;
+  slider.dataset.frame = idx;
+  slider.dataset.axis = axis;
+
+  const val = document.createElement('span');
+  val.className = 'sv';
+  val.id = `sv-${idx}-${axis}`;
+  val.textContent = '+0';
+
+  slider.addEventListener('input', () => {
+    const v = parseInt(slider.value);
+    S.offsets[idx][axis] = v;
+    val.textContent = (v >= 0 ? '+' : '') + v;
+    drawPreview();
+  });
+
+  line.appendChild(lbl);
+  line.appendChild(slider);
+  line.appendChild(val);
+  return line;
+}
+
+function highlightRow() {
+  document.querySelectorAll('.frame-row').forEach((r, i) => {
+    r.classList.toggle('active', i === S.currentFrame);
+  });
+  document.getElementById('s4-frame-num').textContent = S.currentFrame + 1;
+}
+
+function setupPreviewControls() {
+  const fpsSlider = document.getElementById('s4-fps');
+  const scaleSlider = document.getElementById('s4-scale');
+
+  fpsSlider.addEventListener('input', () => {
+    S.fps = parseInt(fpsSlider.value);
+    document.getElementById('s4-fps-val').textContent = S.fps;
+    if (S.playing) startPlay();
+  });
+
+  scaleSlider.addEventListener('input', () => {
+    S.scale = parseInt(scaleSlider.value);
+    document.getElementById('s4-scale-val').textContent = S.scale;
+    updatePreviewSize();
+    drawPreview();
+  });
+
+  document.getElementById('s4-onion').addEventListener('change', (e) => {
+    S.onion = e.target.checked;
+    drawPreview();
+  });
+}
+
+function updatePreviewSize() {
+  const canvas = document.getElementById('s4-canvas');
+  const px = S.frameSize * S.scale;
+  canvas.width = px;
+  canvas.height = px;
+  canvas.style.width = px + 'px';
+  canvas.style.height = px + 'px';
+  const box = document.getElementById('s4-preview-box');
+  box.style.width = (px + 2) + 'px';
+  box.style.height = (px + 2) + 'px';
+}
+
+function drawPreview() {
+  const canvas = document.getElementById('s4-canvas');
+  const ctx = canvas.getContext('2d');
+  const fs = S.frameSize;
+  const sc = S.scale;
+  const px = fs * sc;
+
+  ctx.clearRect(0, 0, px, px);
+  ctx.imageSmoothingEnabled = false;
+
+  if (S.onion && S.frames.length > 1) {
+    const prev = (S.currentFrame - 1 + S.frames.length) % S.frames.length;
+    ctx.globalAlpha = 0.2;
+    const off = S.offsets[prev];
+    ctx.drawImage(S.frames[prev].img, off.x * sc, off.y * sc, fs * sc, fs * sc);
+    ctx.globalAlpha = 1.0;
+  }
+
+  if (S.frames[S.currentFrame]) {
+    const off = S.offsets[S.currentFrame];
+    ctx.drawImage(S.frames[S.currentFrame].img, off.x * sc, off.y * sc, fs * sc, fs * sc);
+  }
+
+  document.getElementById('s4-frame-num').textContent = S.currentFrame + 1;
+}
+
+function startPlay() {
+  if (S.animTimer) clearInterval(S.animTimer);
+  if (S.playing && S.frames.length > 0) {
+    S.animTimer = setInterval(() => {
+      S.currentFrame = (S.currentFrame + 1) % S.frames.length;
+      highlightRow();
+      drawPreview();
+    }, 1000 / S.fps);
+  }
+  drawPreview();
+}
+
+function togglePlay() {
+  S.playing = !S.playing;
+  const btn = document.getElementById('s4-play-btn');
+  btn.textContent = S.playing ? 'Play' : 'Stop';
+  btn.classList.toggle('active', S.playing);
+  if (S.playing) startPlay();
+  else if (S.animTimer) { clearInterval(S.animTimer); S.animTimer = null; }
+}
+
+function stepFrame(dir) {
+  S.currentFrame = (S.currentFrame + dir + S.frames.length) % S.frames.length;
+  highlightRow();
+  drawPreview();
+}
+
+function resetAllOffsets() {
+  S.offsets = S.offsets.map(() => ({ x: 0, y: 0 }));
+  buildAligner();
+}
+
+// Keyboard controls
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+  // Stage 2: arrow keys navigate grid sizes, Cmd/Ctrl+arrow jumps between local minima
+  const stage2Active = document.getElementById('stage-2').classList.contains('active');
+  if (stage2Active && _s2BatchResults.length && _s2SelectedSize != null) {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      const bestOnly = document.getElementById('s2-best-only').checked;
+      const navList = bestOnly ? _s2BatchResults.filter(r => r.is_local_min) : _s2BatchResults;
+      const idx = navList.findIndex(r => r.grid_size === _s2SelectedSize);
+      let newIdx;
+      if (!bestOnly && (e.metaKey || e.ctrlKey)) {
+        // Jump to next/prev local minimum (only when showing all)
+        const dir = e.key === 'ArrowLeft' ? -1 : 1;
+        newIdx = idx + dir;
+        while (newIdx >= 0 && newIdx < navList.length) {
+          if (navList[newIdx].is_local_min) break;
+          newIdx += dir;
+        }
+      } else {
+        newIdx = e.key === 'ArrowLeft' ? idx - 1 : idx + 1;
+      }
+      if (newIdx >= 0 && newIdx < navList.length) {
+        s2SelectBatchPreview(navList[newIdx]);
+        const card = document.querySelector(`#s2-batch-grid [data-grid-size="${navList[newIdx].grid_size}"]`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+      return;
+    }
+  }
+
+  // Stage 4: Cmd/Ctrl+arrow navigates grid sizes, plain arrow navigates frames
+  const stage4Active = document.getElementById('stage-4').classList.contains('active');
+  if (stage4Active && _s4GridResults.length && _s4SelectedSize != null) {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault();
+      const bestOnly = document.getElementById('s4-best-only').checked;
+      const navList = bestOnly ? _s4GridResults.filter(r => r.is_local_min) : _s4GridResults;
+      const idx = navList.findIndex(r => r.grid_size === _s4SelectedSize);
+      const newIdx = e.key === 'ArrowLeft' ? idx - 1 : idx + 1;
+      if (newIdx >= 0 && newIdx < navList.length) {
+        s4SelectGridSize(navList[newIdx]);
+        const card = document.querySelector(`#s4-grid-strip [data-grid-size="${navList[newIdx].grid_size}"]`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+      return;
+    }
+  }
+
+  // Stage 4: frame controls
+  if (!S.frames.length) return;
+
+  switch (e.key) {
+    case ' ': e.preventDefault(); togglePlay(); break;
+    case 'ArrowLeft':
+      if (e.shiftKey) { S.offsets[S.currentFrame].x--; updateSliderUI(); drawPreview(); }
+      else stepFrame(-1);
+      break;
+    case 'ArrowRight':
+      if (e.shiftKey) { S.offsets[S.currentFrame].x++; updateSliderUI(); drawPreview(); }
+      else stepFrame(1);
+      break;
+    case 'ArrowUp':
+      if (e.shiftKey) { e.preventDefault(); S.offsets[S.currentFrame].y--; updateSliderUI(); drawPreview(); }
+      break;
+    case 'ArrowDown':
+      if (e.shiftKey) { e.preventDefault(); S.offsets[S.currentFrame].y++; updateSliderUI(); drawPreview(); }
+      break;
+  }
+});
+
+function updateSliderUI() {
+  const i = S.currentFrame;
+  ['x', 'y'].forEach(axis => {
+    const v = S.offsets[i][axis];
+    const el = document.getElementById(`sv-${i}-${axis}`);
+    if (el) el.textContent = (v >= 0 ? '+' : '') + v;
+    const slider = document.querySelector(`input[data-frame="${i}"][data-axis="${axis}"]`);
+    if (slider) slider.value = v;
+  });
+}
+
+// ── EXPORT ──
+function exportSheet() {
+  if (!S.frames.length) return;
+  const fs = S.frameSize;
+  const n = S.frames.length;
+  const c = document.createElement('canvas');
+  c.width = fs * n;
+  c.height = fs;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  S.frames.forEach((f, i) => {
+    const off = S.offsets[i];
+    ctx.drawImage(f.img, i * fs + off.x, off.y);
+  });
+
+  const link = document.createElement('a');
+  link.download = `${S.characterName}_aligned_sheet.png`;
+  link.href = c.toDataURL('image/png');
+  link.click();
+  status('Spritesheet exported');
+}
+
+async function exportGif() {
+  if (!S.frames.length) return;
+  document.getElementById('s4-export-loading').style.display = 'flex';
+  status('Exporting GIF...');
+
+  const paths = S.frames.map(f => f.path);
+  const animType = document.getElementById('s3-anim-type').value;
+
+  const form = new FormData();
+  form.append('frames_json', JSON.stringify(paths));
+  form.append('animation_type', animType);
+  form.append('frame_delay', Math.round(1000 / S.fps));
+  form.append('scale', S.scale);
+  form.append('character_name', S.characterName);
+
+  try {
+    const res = await fetch('/api/export-gif', { method: 'POST', body: form });
+    const data = await res.json();
+
+    // Download it
+    const link = document.createElement('a');
+    link.download = `${S.characterName}_${animType}.gif`;
+    link.href = data.gif_url + '?t=' + Date.now();
+    link.click();
+    status(`GIF exported: ${data.gif_path}`);
+  } catch (e) {
+    status(`Export error: ${e.message}`);
+  }
+
+  document.getElementById('s4-export-loading').style.display = 'none';
+}
+
+// ── PROMPT PREVIEW ──
+async function previewGeneratePrompt() {
+  const prompt = document.getElementById('s1-prompt').value.trim();
+  const size = document.getElementById('s1-size').value;
+  if (!prompt) return alert('Enter a character description first');
+
+  const transparent = document.getElementById('s1-transparent').checked;
+  const form = new FormData();
+  form.append('prompt_type', 'generate');
+  form.append('character_description', prompt);
+  form.append('frame_size', size);
+  form.append('transparent', transparent);
+
+  const res = await fetch('/api/preview-prompt', { method: 'POST', body: form });
+  const data = await res.json();
+  showPromptModal(data);
+}
+
+async function previewAnimatePrompt() {
+  const extra = document.getElementById('s3-extra').value.trim();
+  let desc = S.description || document.getElementById('s1-prompt').value.trim() || '';
+  if (extra) desc += '. ' + extra;
+
+  const form = new FormData();
+  form.append('prompt_type', 'animate');
+  form.append('character_description', desc);
+  form.append('animation_type', document.getElementById('s3-anim-type').value);
+  form.append('game_style', document.getElementById('s3-game-style').value);
+  form.append('num_frames', document.getElementById('s3-num-frames').value);
+  form.append('layout', document.getElementById('s3-layout').value);
+  form.append('seed_path', S.seedPath || S.basePath || '');
+  form.append('character_name', S.characterName || 'character');
+  form.append('draw_slots', document.getElementById('s3-draw-slots').checked);
+  form.append('prefill_slots', document.getElementById('s3-prefill-slots').checked);
+
+  const res = await fetch('/api/preview-prompt', { method: 'POST', body: form });
+  const data = await res.json();
+  showPromptModal(data);
+}
+
+function showPromptModal(data) {
+  const modal = document.getElementById('prompt-modal');
+  const info = document.getElementById('prompt-modal-info');
+  const textarea = document.getElementById('prompt-modal-text');
+  const canvasArea = document.getElementById('prompt-modal-canvas');
+
+  info.textContent = `Model: ${data.model} | API: ${data.api}${data.layout ? ` | Layout: ${data.layout}, slot: ${data.slot_size}px` : ''}`;
+  textarea.value = data.prompt;
+
+  if (data.canvas_url) {
+    canvasArea.innerHTML = `<div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Canvas Image (right-click to save)</div>
+      <img src="${data.canvas_url}?t=${Date.now()}" style="max-width:100%;max-height:200px;image-rendering:pixelated;border:1px solid var(--border);border-radius:4px;background:var(--card-bg)">`;
+    canvasArea.style.display = 'block';
+  } else {
+    canvasArea.style.display = 'none';
+  }
+
+  modal.style.display = 'flex';
+  textarea.focus();
+  textarea.select();
+}
+
+function closePromptModal() {
+  document.getElementById('prompt-modal').style.display = 'none';
+}
+
+function copyPrompt() {
+  const textarea = document.getElementById('prompt-modal-text');
+  textarea.select();
+  navigator.clipboard.writeText(textarea.value);
+  const btn = document.getElementById('prompt-copy-btn');
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 1500);
+}
+</script>
+
+<!-- Prompt Preview Modal -->
+<div id="prompt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;
+  display:none;align-items:center;justify-content:center;padding:24px" onclick="if(event.target===this)closePromptModal()">
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:20px;
+    max-width:700px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="color:var(--text);font-weight:bold;font-size:14px">Prompt Preview</div>
+      <button class="btn" onclick="closePromptModal()" style="padding:2px 8px;font-size:11px">Close</button>
+    </div>
+    <div id="prompt-modal-info" style="color:var(--text-muted);font-size:10px;font-family:monospace"></div>
+    <textarea id="prompt-modal-text" readonly style="width:100%;min-height:250px;background:var(--card-bg);
+      color:var(--text);border:1px solid var(--border);border-radius:4px;padding:12px;font-size:12px;
+      font-family:monospace;resize:vertical;line-height:1.5"></textarea>
+    <div id="prompt-modal-canvas" style="display:none"></div>
+    <div class="gap-row">
+      <button class="btn btn-primary" id="prompt-copy-btn" onclick="copyPrompt()">Copy</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

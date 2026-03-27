@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPRITE ALIGNER</title>
+<style>
+@font-face {
+  font-family: 'Pixel';
+  src: url(data:font/woff2;base64,) format('woff2');
+}
+
+:root {
+  --bg-deep: #0a0a0f;
+  --bg-panel: #12121a;
+  --bg-slot: #1a1a26;
+  --bg-hover: #22223a;
+  --border: #2a2a3e;
+  --border-active: #5e5eff;
+  --accent: #ff6b3d;
+  --accent-dim: #cc5530;
+  --accent-glow: rgba(255, 107, 61, 0.3);
+  --blue: #4d7aff;
+  --blue-dim: #3a5ecc;
+  --green: #3dff8f;
+  --green-dim: #2ab86a;
+  --text: #e0e0f0;
+  --text-dim: #6e6e8a;
+  --text-muted: #44445a;
+  --checker-a: #1e1e2a;
+  --checker-b: #252535;
+  --frame-size: 64;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+header h1 {
+  font-size: 14px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+header h1 span {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.header-info {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.stat {
+  color: var(--text-dim);
+}
+
+.stat b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── LAYOUT ── */
+.app {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  min-height: calc(100vh - 53px);
+}
+
+/* ── DROP ZONE ── */
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border: 2px dashed var(--border);
+  border-radius: 4px;
+  margin: 40px;
+  padding: 60px;
+  transition: border-color 0.2s, background 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(255, 107, 61, 0.04);
+}
+
+.drop-zone .icon {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--text-dim);
+}
+
+.drop-zone p {
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.8;
+}
+
+.drop-zone p em {
+  color: var(--accent);
+  font-style: normal;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.drop-zone small {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+/* ── PREVIEW AREA ── */
+.preview-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  gap: 20px;
+}
+
+.preview-stage {
+  position: relative;
+  background-image:
+    linear-gradient(45deg, var(--checker-a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-a) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-color: var(--checker-b);
+  border: 1px solid var(--border);
+  image-rendering: pixelated;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-stage canvas {
+  image-rendering: pixelated;
+}
+
+.preview-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn {
+  background: var(--bg-slot);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.btn:hover {
+  border-color: var(--border-active);
+  background: var(--bg-hover);
+}
+
+.btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.btn.primary {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn.primary:hover {
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.btn.export-btn {
+  background: var(--green-dim);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.btn.export-btn:hover {
+  background: #35dd7a;
+  box-shadow: 0 0 12px rgba(61, 255, 143, 0.3);
+}
+
+.frame-indicator {
+  color: var(--text-dim);
+  font-size: 11px;
+  min-width: 80px;
+  text-align: center;
+}
+
+.frame-indicator b {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar-header h2 {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* ── GLOBAL CONTROLS ── */
+.global-controls {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-row label {
+  color: var(--text-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  min-width: 44px;
+}
+
+.control-row input[type="range"] {
+  flex: 1;
+}
+
+.control-row .val {
+  color: var(--accent);
+  font-weight: 600;
+  min-width: 32px;
+  text-align: right;
+  font-size: 11px;
+}
+
+/* ── RANGE SLIDERS ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--bg-slot);
+  border: 1px solid var(--border);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: none;
+  cursor: grab;
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  background: #fff;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: 0;
+  cursor: grab;
+}
+
+/* ── FRAME SLOTS ── */
+.frame-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.frame-slot {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  grid-template-rows: auto auto;
+  gap: 4px 10px;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--border);
+  transition: all 0.15s;
+}
+
+.frame-slot:hover {
+  background: var(--bg-slot);
+  border-color: var(--border);
+}
+
+.frame-slot.active {
+  background: rgba(255, 107, 61, 0.06);
+  border-color: var(--accent-dim);
+}
+
+.frame-thumb {
+  grid-row: 1 / 3;
+  width: 48px;
+  height: 48px;
+  background-image:
+    linear-gradient(45deg, var(--checker-a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-a) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+  background-color: var(--checker-b);
+  border: 1px solid var(--border);
+  image-rendering: pixelated;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.frame-thumb canvas {
+  image-rendering: pixelated;
+  position: absolute;
+}
+
+.frame-number {
+  font-size: 10px;
+  color: var(--text-muted);
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  pointer-events: none;
+  text-shadow: 0 0 3px var(--bg-deep);
+}
+
+.frame-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  justify-content: center;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slider-row label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  width: 10px;
+  font-weight: 700;
+}
+
+.slider-row input[type="range"] {
+  flex: 1;
+  height: 3px;
+}
+
+.slider-row .offset-val {
+  font-size: 10px;
+  color: var(--blue);
+  font-weight: 600;
+  min-width: 28px;
+  text-align: right;
+}
+
+.frame-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 10px;
+}
+
+.frame-meta .reset-btn {
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.frame-meta .reset-btn:hover {
+  color: var(--accent);
+}
+
+/* ── ONION SKIN ── */
+.onion-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.onion-label input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--border); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── HIDDEN ── */
+.hidden { display: none !important; }
+
+/* ── CROSSHAIR OVERLAY ── */
+.crosshair {
+  position: absolute;
+  pointer-events: none;
+  inset: 0;
+}
+
+.crosshair-h, .crosshair-v {
+  position: absolute;
+  background: var(--accent);
+  opacity: 0.15;
+}
+
+.crosshair-h {
+  height: 1px;
+  left: 0;
+  right: 0;
+  top: 50%;
+}
+
+.crosshair-v {
+  width: 1px;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SPRITE <span>ALIGNER</span></h1>
+  <div class="header-info">
+    <span class="stat" id="stat-frames">Frames: <b>0</b></span>
+    <span class="stat" id="stat-size">Size: <b>--</b></span>
+    <input type="file" id="file-input" accept="image/png" multiple style="display:none">
+  </div>
+</header>
+
+<div class="app">
+  <!-- MAIN AREA -->
+  <div class="main-area">
+    <!-- Drop zone (shown when no image loaded) -->
+    <div class="drop-zone" id="drop-zone">
+      <div class="icon">+</div>
+      <p>Drop spritesheet PNG here<br>or <em>click to browse</em></p>
+      <small>Horizontal strip of equal-sized frames &middot; PNG with transparency</small>
+    </div>
+
+    <!-- Preview (shown when image loaded) -->
+    <div class="preview-section hidden" id="preview-section">
+      <div class="preview-stage" id="preview-stage">
+        <canvas id="preview-canvas"></canvas>
+        <div class="crosshair" id="crosshair">
+          <div class="crosshair-h"></div>
+          <div class="crosshair-v"></div>
+        </div>
+      </div>
+
+      <div class="preview-controls">
+        <button class="btn" id="btn-prev" title="Previous frame">&larr;</button>
+        <button class="btn active" id="btn-play" title="Play/Pause">PLAY</button>
+        <button class="btn" id="btn-next" title="Next frame">&rarr;</button>
+        <span class="frame-indicator">
+          Frame <b id="current-frame-num">1</b> / <span id="total-frame-num">1</span>
+        </span>
+        <label class="onion-label">
+          <input type="checkbox" id="onion-skin"> Onion
+        </label>
+        <button class="btn export-btn" id="btn-export" title="Download aligned spritesheet">EXPORT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Controls</h2>
+      <button class="btn" id="btn-reset-all" style="font-size:9px;padding:4px 8px;">Reset All</button>
+    </div>
+
+    <div class="global-controls">
+      <div class="control-row">
+        <label>Speed</label>
+        <input type="range" id="fps-slider" min="1" max="24" value="8">
+        <span class="val" id="fps-val">8</span>
+        <span style="color:var(--text-muted);font-size:9px">FPS</span>
+      </div>
+      <div class="control-row">
+        <label>Scale</label>
+        <input type="range" id="scale-slider" min="1" max="8" value="4">
+        <span class="val" id="scale-val">4</span>
+        <span style="color:var(--text-muted);font-size:9px">×</span>
+      </div>
+      <div class="control-row">
+        <label>Frame</label>
+        <input type="range" id="frame-size-slider" min="16" max="256" value="64" step="16">
+        <span class="val" id="frame-size-val">64</span>
+        <span style="color:var(--text-muted);font-size:9px">px</span>
+      </div>
+    </div>
+
+    <div class="frame-list" id="frame-list"></div>
+  </div>
+</div>
+
+<script>
+const state = {
+  frames: [],        // array of ImageData
+  offsets: [],       // array of {x, y}
+  frameSize: 64,
+  scale: 4,
+  fps: 8,
+  playing: true,
+  currentFrame: 0,
+  onionSkin: false,
+  animTimer: null,
+  sourceImage: null,
+};
+
+// ── DOM refs ──
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const previewSection = document.getElementById('preview-section');
+const previewStage = document.getElementById('preview-stage');
+const previewCanvas = document.getElementById('preview-canvas');
+const ctx = previewCanvas.getContext('2d');
+const frameList = document.getElementById('frame-list');
+const btnPlay = document.getElementById('btn-play');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnExport = document.getElementById('btn-export');
+const btnResetAll = document.getElementById('btn-reset-all');
+const fpsSlider = document.getElementById('fps-slider');
+const scaleSlider = document.getElementById('scale-slider');
+const frameSizeSlider = document.getElementById('frame-size-slider');
+const onionCheckbox = document.getElementById('onion-skin');
+
+// ── DROP / FILE HANDLING ──
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files.length) loadImage(e.target.files[0]);
+});
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('drag-over');
+});
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) loadImage(e.dataTransfer.files[0]);
+});
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      state.sourceImage = img;
+      splitFrames(img);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function splitFrames(img) {
+  const h = img.height;
+  let fs = state.frameSize;
+
+  // Auto-detect: if image height != frameSize, use image height
+  if (img.height <= 256) {
+    fs = img.height;
+    state.frameSize = fs;
+    frameSizeSlider.value = fs;
+    document.getElementById('frame-size-val').textContent = fs;
+  }
+
+  const numFrames = Math.round(img.width / fs);
+  state.frames = [];
+  state.offsets = [];
+
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = fs;
+  tmpCanvas.height = fs;
+  const tmpCtx = tmpCanvas.getContext('2d');
+
+  for (let i = 0; i < numFrames; i++) {
+    tmpCtx.clearRect(0, 0, fs, fs);
+    tmpCtx.drawImage(img, i * fs, 0, fs, fs, 0, 0, fs, fs);
+    state.frames.push(tmpCtx.getImageData(0, 0, fs, fs));
+    state.offsets.push({ x: 0, y: 0 });
+  }
+
+  state.currentFrame = 0;
+
+  // Update UI
+  document.getElementById('stat-frames').innerHTML = `Frames: <b>${numFrames}</b>`;
+  document.getElementById('stat-size').innerHTML = `Size: <b>${fs}×${fs}</b>`;
+  document.getElementById('total-frame-num').textContent = numFrames;
+
+  dropZone.classList.add('hidden');
+  previewSection.classList.remove('hidden');
+
+  buildFrameList();
+  updatePreviewSize();
+  startAnimation();
+}
+
+// ── FRAME LIST ──
+function buildFrameList() {
+  frameList.innerHTML = '';
+  const fs = state.frameSize;
+
+  state.frames.forEach((frameData, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'frame-slot' + (i === state.currentFrame ? ' active' : '');
+    slot.dataset.index = i;
+
+    // Thumbnail
+    const thumb = document.createElement('div');
+    thumb.className = 'frame-thumb';
+    const thumbCanvas = document.createElement('canvas');
+    thumbCanvas.width = fs;
+    thumbCanvas.height = fs;
+    thumbCanvas.style.width = '46px';
+    thumbCanvas.style.height = '46px';
+    const tCtx = thumbCanvas.getContext('2d');
+    tCtx.putImageData(frameData, 0, 0);
+    thumb.appendChild(thumbCanvas);
+
+    const num = document.createElement('div');
+    num.className = 'frame-number';
+    num.textContent = i + 1;
+    thumb.appendChild(num);
+
+    // Sliders
+    const sliders = document.createElement('div');
+    sliders.className = 'frame-sliders';
+
+    sliders.appendChild(makeSliderRow('X', i, 'x'));
+    sliders.appendChild(makeSliderRow('Y', i, 'y'));
+
+    // Meta
+    const meta = document.createElement('div');
+    meta.className = 'frame-meta';
+    const resetBtn = document.createElement('span');
+    resetBtn.className = 'reset-btn';
+    resetBtn.textContent = 'reset';
+    resetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.offsets[i] = { x: 0, y: 0 };
+      buildFrameList();
+    });
+    meta.appendChild(resetBtn);
+
+    slot.appendChild(thumb);
+    slot.appendChild(sliders);
+    slot.appendChild(meta);
+
+    slot.addEventListener('click', () => {
+      state.currentFrame = i;
+      highlightActiveSlot();
+    });
+
+    frameList.appendChild(slot);
+  });
+}
+
+function makeSliderRow(label, frameIdx, axis) {
+  const row = document.createElement('div');
+  row.className = 'slider-row';
+
+  const lbl = document.createElement('label');
+  lbl.textContent = label;
+
+  const slider = document.createElement('input');
+  slider.type = 'range';
+  slider.min = -48;
+  slider.max = 48;
+  slider.value = state.offsets[frameIdx][axis];
+
+  const val = document.createElement('span');
+  val.className = 'offset-val';
+  val.textContent = formatOffset(state.offsets[frameIdx][axis]);
+
+  slider.addEventListener('input', () => {
+    const v = parseInt(slider.value);
+    state.offsets[frameIdx][axis] = v;
+    val.textContent = formatOffset(v);
+  });
+
+  row.appendChild(lbl);
+  row.appendChild(slider);
+  row.appendChild(val);
+  return row;
+}
+
+function formatOffset(v) {
+  return (v >= 0 ? '+' : '') + v;
+}
+
+function highlightActiveSlot() {
+  document.querySelectorAll('.frame-slot').forEach((el, i) => {
+    el.classList.toggle('active', i === state.currentFrame);
+  });
+  document.getElementById('current-frame-num').textContent = state.currentFrame + 1;
+}
+
+// ── PREVIEW ──
+function updatePreviewSize() {
+  const fs = state.frameSize;
+  const s = state.scale;
+  const px = fs * s;
+  previewCanvas.width = px;
+  previewCanvas.height = px;
+  previewCanvas.style.width = px + 'px';
+  previewCanvas.style.height = px + 'px';
+  previewStage.style.width = (px + 2) + 'px';
+  previewStage.style.height = (px + 2) + 'px';
+}
+
+function drawPreview() {
+  const fs = state.frameSize;
+  const s = state.scale;
+  const px = fs * s;
+
+  ctx.clearRect(0, 0, px, px);
+  ctx.imageSmoothingEnabled = false;
+
+  // Onion skin: draw previous frame at low opacity
+  if (state.onionSkin && state.frames.length > 1) {
+    const prevIdx = (state.currentFrame - 1 + state.frames.length) % state.frames.length;
+    drawFrame(prevIdx, 0.2);
+  }
+
+  // Current frame
+  drawFrame(state.currentFrame, 1.0);
+
+  document.getElementById('current-frame-num').textContent = state.currentFrame + 1;
+}
+
+function drawFrame(idx, alpha) {
+  if (idx < 0 || idx >= state.frames.length) return;
+  const fs = state.frameSize;
+  const s = state.scale;
+  const off = state.offsets[idx];
+
+  // Draw frame data to a temp canvas, then scale up
+  const tmp = document.createElement('canvas');
+  tmp.width = fs;
+  tmp.height = fs;
+  const tCtx = tmp.getContext('2d');
+  tCtx.putImageData(state.frames[idx], 0, 0);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(tmp, off.x * s, off.y * s, fs * s, fs * s);
+  ctx.restore();
+}
+
+// ── ANIMATION ──
+function startAnimation() {
+  stopAnimation();
+  if (state.playing) {
+    const interval = 1000 / state.fps;
+    state.animTimer = setInterval(() => {
+      state.currentFrame = (state.currentFrame + 1) % state.frames.length;
+      highlightActiveSlot();
+      drawPreview();
+    }, interval);
+  }
+  drawPreview();
+}
+
+function stopAnimation() {
+  if (state.animTimer) {
+    clearInterval(state.animTimer);
+    state.animTimer = null;
+  }
+}
+
+// ── CONTROLS ──
+btnPlay.addEventListener('click', () => {
+  state.playing = !state.playing;
+  btnPlay.textContent = state.playing ? 'PLAY' : 'STOP';
+  btnPlay.classList.toggle('active', state.playing);
+  if (state.playing) startAnimation();
+  else stopAnimation();
+});
+
+btnPrev.addEventListener('click', () => {
+  state.currentFrame = (state.currentFrame - 1 + state.frames.length) % state.frames.length;
+  highlightActiveSlot();
+  drawPreview();
+});
+
+btnNext.addEventListener('click', () => {
+  state.currentFrame = (state.currentFrame + 1) % state.frames.length;
+  highlightActiveSlot();
+  drawPreview();
+});
+
+fpsSlider.addEventListener('input', () => {
+  state.fps = parseInt(fpsSlider.value);
+  document.getElementById('fps-val').textContent = state.fps;
+  if (state.playing) startAnimation();
+});
+
+scaleSlider.addEventListener('input', () => {
+  state.scale = parseInt(scaleSlider.value);
+  document.getElementById('scale-val').textContent = state.scale;
+  updatePreviewSize();
+  drawPreview();
+});
+
+frameSizeSlider.addEventListener('input', () => {
+  const newSize = parseInt(frameSizeSlider.value);
+  document.getElementById('frame-size-val').textContent = newSize;
+  // Re-split if we have a source image
+  if (state.sourceImage) {
+    state.frameSize = newSize;
+    splitFrames(state.sourceImage);
+  }
+});
+
+onionCheckbox.addEventListener('change', () => {
+  state.onionSkin = onionCheckbox.checked;
+  drawPreview();
+});
+
+btnResetAll.addEventListener('click', () => {
+  state.offsets = state.offsets.map(() => ({ x: 0, y: 0 }));
+  buildFrameList();
+});
+
+// ── EXPORT ──
+btnExport.addEventListener('click', () => {
+  if (!state.frames.length) return;
+
+  const fs = state.frameSize;
+  const n = state.frames.length;
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width = fs * n;
+  exportCanvas.height = fs;
+  const eCtx = exportCanvas.getContext('2d');
+  eCtx.imageSmoothingEnabled = false;
+
+  for (let i = 0; i < n; i++) {
+    const tmp = document.createElement('canvas');
+    tmp.width = fs;
+    tmp.height = fs;
+    const tCtx = tmp.getContext('2d');
+
+    // Create a frame canvas with the offset applied
+    const frameCanvas = document.createElement('canvas');
+    frameCanvas.width = fs;
+    frameCanvas.height = fs;
+    const fCtx = frameCanvas.getContext('2d');
+    fCtx.putImageData(state.frames[i], 0, 0);
+
+    // Draw with offset
+    tCtx.drawImage(frameCanvas, state.offsets[i].x, state.offsets[i].y);
+
+    eCtx.drawImage(tmp, i * fs, 0);
+  }
+
+  // Download
+  const link = document.createElement('a');
+  link.download = 'aligned_spritesheet.png';
+  link.href = exportCanvas.toDataURL('image/png');
+  link.click();
+});
+
+// ── KEYBOARD ──
+document.addEventListener('keydown', (e) => {
+  if (!state.frames.length) return;
+
+  switch (e.key) {
+    case ' ':
+      e.preventDefault();
+      btnPlay.click();
+      break;
+    case 'ArrowLeft':
+      if (e.shiftKey) {
+        state.offsets[state.currentFrame].x--;
+        buildFrameList();
+        drawPreview();
+      } else {
+        btnPrev.click();
+      }
+      break;
+    case 'ArrowRight':
+      if (e.shiftKey) {
+        state.offsets[state.currentFrame].x++;
+        buildFrameList();
+        drawPreview();
+      } else {
+        btnNext.click();
+      }
+      break;
+    case 'ArrowUp':
+      if (e.shiftKey) {
+        state.offsets[state.currentFrame].y--;
+        buildFrameList();
+        drawPreview();
+      }
+      break;
+    case 'ArrowDown':
+      if (e.shiftKey) {
+        state.offsets[state.currentFrame].y++;
+        buildFrameList();
+        drawPreview();
+      }
+      break;
+  }
+});
+</script>
+</body>
+</html>

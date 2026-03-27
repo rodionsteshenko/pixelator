@@ -10,3 +10,7 @@ faiss_index_ids.npy
 news_previews/
 *.png
 *.txt
+output/
+.playwright-mcp/
+.env
+.venv/
